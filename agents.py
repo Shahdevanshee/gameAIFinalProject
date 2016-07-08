@@ -26,7 +26,7 @@ from statemachine import *
 
 ############################
 ### STATEAGENT
-
+#HELLLLOOO JUST TO CHECK 
 class StateAgent(Agent, StateMachine):
 
 	### states: a set of states (class names) that the agent can be in
