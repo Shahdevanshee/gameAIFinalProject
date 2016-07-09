@@ -119,15 +119,16 @@ class Healer(MOBAAgent, Barker):
 
 
 ###################################################
-### MyHealer
+#region MyHealer
 
 class MyHealer(Healer, BehaviorTree):
 
-	def __init__(self, position, orientation, world, image = GRUNT, speed = SPEED, viewangle = 360, hitpoints = HITPOINTS, firerate = FIRERATE, bulletclass = SmallBullet, healrate = HEALRATE):
+	def __init__(self, position, orientation, world, image = GRUNT, speed = SPEED, viewangle = 360, hitpoints = HITPOINTS, firerate = FIRERATE, bulletclass = SmallBullet, healrate = HEALRATE,id=None):
 		Healer.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass, healrate)
 		BehaviorTree.__init__(self)
 		self.states = []
 		self.startState = None
+		self.id = id
 		### YOUR CODE GOES BELOW HERE ###
 
 		### YOUR CODE GOES ABOVE HERE ###
@@ -144,7 +145,7 @@ class MyHealer(Healer, BehaviorTree):
 		spec = healerTreeSpec(self)
 		tree = myHealerBuildTree(self)
 		if spec is not None and (isinstance(spec, list) or isinstance(spec, tuple)):
-			self.myHealerBuildTree(spec)
+			self.buildTree(spec)
 		elif tree is not None:
 			self.setTree(tree)
 		elif len(self.states) > 0 and self.startState is not None:
@@ -170,16 +171,17 @@ class MyHealer(Healer, BehaviorTree):
 
 		### YOUR CODE GOES ABOVE HERE ###
 
-##########################################################
-
+#endregion
+###################################################
+#region MyCompanionHero
 class MyCompanionHero(Hero, BehaviorTree, Barker):
 
-	def __init__(self, position, orientation, world, image = AGENT, speed = SPEED, viewangle = 360, hitpoints = HEROHITPOINTS, firerate = FIRERATE, bulletclass = BigBullet, dodgerate = DODGERATE, areaeffectrate = AREAEFFECTRATE, areaeffectdamage = AREAEFFECTDAMAGE):
+	def __init__(self, position, orientation, world, image = AGENT, speed = SPEED, viewangle = 360, hitpoints = HEROHITPOINTS, firerate = FIRERATE, bulletclass = BigBullet, dodgerate = DODGERATE, areaeffectrate = AREAEFFECTRATE, areaeffectdamage = AREAEFFECTDAMAGE,id=None):
 		Hero.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass, dodgerate, areaeffectrate, areaeffectdamage)
 		BehaviorTree.__init__(self)
 		self.states = []
 		self.startState = None
-		self.id = None
+		self.id = id
 		### YOUR CODE GOES BELOW HERE ###
 
 		### YOUR CODE GOES ABOVE HERE ###
@@ -227,9 +229,10 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
 		### YOUR CODE GOES BELOW HERE
 
 		### YOUR CODE GOES ABOVE HERE
+#endregion
+###################################################
 
 
-##########################################################
 ### IDLE STATE
 
 class Idle(State):
@@ -256,7 +259,9 @@ def healerTreeSpec(agent):
 	myid = str(agent.getTeam())
 	spec = None
 	### YOUR CODE GOES BELOW HERE ###
-	
+	# spec = [Selector, [HealthDaemon, HealCompanion],[LeftSideDaemon, Formation], TacticalCover]
+	spec = [Selector, [LeftSideDaemon, Formation]]#, TacticalCover]
+
 	### YOUR CODE GOES ABOVE HERE ###
 	return spec
 
@@ -264,7 +269,7 @@ def myHealerBuildTree(agent):
 	myid = str(agent.getTeam())
 	root = None
 	### YOUR CODE GOES BELOW HERE ###
-	
+
 	### YOUR CODE GOES ABOVE HERE ###
 	return root
 
@@ -272,7 +277,7 @@ def companionTreeSpec(agent):
 	myid = str(agent.getTeam())
 	spec = None
 	### YOUR CODE GOES BELOW HERE ###
-	
+	spec = [Selector, [LeftSideDaemon, Formation]]#, TacticalCover]
 	### YOUR CODE GOES ABOVE HERE ###
 	return spec
 
@@ -296,4 +301,71 @@ def makeNode(type, agent, *args):
 
 ##########################################################
 ### YOUR STATES AND BEHAVIORS GO HERE
+
+class LeftSideDaemon(BTNode):
+	### percentage: percentage of hitpoints that must have been lost to fail the daemon check
+
+	def parseArgs(self, args):
+		BTNode.parseArgs(self, args)
+		self.percentage = 0.4
+		# First argument is the factor
+		if len(args) > 0:
+			self.percentage = args[0]
+		# Second argument is the node ID
+		if len(args) > 1:
+			self.id = args[1]
+
+	def execute(self, delta=0):
+		ret = BTNode.execute(self, delta)
+		world  = self.agent.world
+
+		# currently, no logic implemented
+		return self.getChild(0).execute(delta)
+
+		return ret
+
+
+class Formation(BTNode):
+
+	### target: the hero to chase
+	### timer: how often to replan
+	def parseArgs(self, args):
+		BTNode.parseArgs(self, args)
+		self.target = None
+		self.timer = 50
+		# First argument is the node ID
+		if len(args) > 0:
+			self.id = args[0]
+
+	def enter(self):
+		BTNode.enter(self)
+		self.timer = 50
+
+		#nodes to navigate to; these are points around the main character
+		# ... right now, this is a placeholder...
+		#  should be calculated on update for the hero; the id of the
+		# heros indexes the nodes list
+		nodes = [(125,145),(150,130),(150,160)]
+		orientations = [0.,0.,0.]
+
+		self.formation_node = nodes[self.agent.id]
+		self.orientation = orientations[self.agent.id]
+
+		self.agent.turnToAngle(self.orientation)
+		self.agent.navigateTo(self.formation_node)
+		return None
+
+	def execute(self, delta = 0):
+		ret = BTNode.execute(self, delta)
+		self.agent.turnToAngle(self.orientation)
+		if self.agent.navigator.doneMoving():
+			return True
+		else:
+			# executing
+			self.timer = self.timer - 1
+			if self.timer <= 0:
+				self.timer = 50
+				self.agent.navigateTo(self.formation_node)
+			return None
+		return ret
 

@@ -172,14 +172,14 @@ def myCheckpoint(nav):
 ### agent: the Agent object
 def clearShot(p1, p2, worldLines, worldPoints, agent):
 	### YOUR CODE GOES BELOW HERE ###
-	O0OOOO0OO0OOOO0O0 =agent .getRadius ()*4.0 #line:3
-	O0O00O000OO0OO000 =rayTraceWorld (p1 ,p2 ,worldLines )#line:4
-	if O0O00O000OO0OO000 ==None :#line:5
-		O00O0OO0O00OOO000 =False #line:6
-		for O0OOOOO0O000O0OO0 in worldPoints :#line:7
-			if minimumDistance ((p1 ,p2 ),O0OOOOO0O000O0OO0 )<O0OOOO0OO0OOOO0O0 :#line:8
-				O00O0OO0O00OOO000 =True #line:9
-		if not O00O0OO0O00OOO000 :#line:10
+	operational_radius =agent .getRadius ()*2.0 #line:3
+	intersection =rayTraceWorld (p1 ,p2 ,worldLines )#line:4
+	if intersection ==None :#line:5
+		is_clear_shot =False #line:6
+		for point in worldPoints :#line:7
+			if minimumDistance ((p1 ,p2 ),point )<operational_radius :#line:8
+				is_clear_shot =True #line:9
+		if not is_clear_shot :#line:10
 			return True #line:11
 	### YOUR CODE GOES ABOVE HERE ###
 	return False
