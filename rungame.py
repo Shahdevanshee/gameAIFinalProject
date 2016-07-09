@@ -182,6 +182,7 @@ world.addTower(t22)
 healer = MyHealer((150, 600), 0, world)
 healer.setNavigator(cloneAStarNavigator(nav))
 healer.team = 1
+healer.id = 0
 world.addNPC(healer)
 
 c1 = MyCompanionHero((150, 550), 0, world, SHIELDJACKAL)
