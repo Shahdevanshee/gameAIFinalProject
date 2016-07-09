@@ -1,21 +1,3 @@
-'''
- * Copyright (c) 2014, 2015 Entertainment Intelligence Lab, Georgia Institute of Technology.
- * Originally developed by Mark Riedl.
- * Last edited by Mark Riedl 05/2015
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
-'''
-
 import sys, pygame, math, numpy, random, time, copy
 from pygame.locals import * 
 
@@ -70,6 +52,7 @@ class AStarNavigator(NavMeshNavigator):
 					print len(self.pathnetwork)
 					newnetwork = unobstructedNetwork(self.pathnetwork, self.world.getGates())
 					print len(newnetwork)
+					print "ok"
 					closedlist = []
 					path, closedlist = astar(start, end, newnetwork)
 					if path is not None and len(path) > 0:
@@ -104,34 +87,83 @@ def unobstructedNetwork(network, worldLines):
 	return newnetwork
 
 
-
+def insert(x, list, func = lambda x: x):
+	for i in xrange(len(list)):
+		if func(x) < func(list[i]):
+			list.insert(i, x)
+			return list
+	list.append(x)
+	return list
+	
 
 def astar(init, goal, network):
 	path = []
 	open = []
 	closed = []
 	### YOUR CODE GOES BELOW HERE ###
-
+	init =(init ,0 ,distance (init ,goal ),None )#line:3
+	OO000O0000O0000O0 =set ()#line:4
+	OO0O000O00O0O000O =set ()#line:5
+	O0000O0O00O00O0O0 =[init ]#line:6
+	O000OOOO0OOOOOO00 =init #line:7
+	while O000OOOO0OOOOOO00 is not None and O000OOOO0OOOOOO00 [0 ]!=goal and len (O0000O0O00O00O0O0 )>0 :#line:10
+		OO000O0000O0000O0 .add (O000OOOO0OOOOOO00 [0 ])#line:11
+		OO0O000O00O0O000O .add (O000OOOO0OOOOOO00 )#line:12
+		O0000O0O00O00O0O0 .pop (0 )#line:13
+		OOOOOOO0000000OO0 =foow (O000OOOO0OOOOOO00 ,network ,goal )#line:15
+		for O0OOO0OO00OOOO0O0 in OOOOOOO0000000OO0 :#line:17
+			if O0OOO0OO00OOOO0O0 [0 ]not in OO000O0000O0000O0 :#line:18
+				insert (O0OOO0OO00OOOO0O0 ,O0000O0O00O00O0O0 ,lambda x :x [1 ]+x [2 ])#line:19
+		if len (O0000O0O00O00O0O0 )>0 :#line:21
+			O000OOOO0OOOOOO00 =O0000O0O00O00O0O0 [0 ]#line:22
+		else :#line:23
+			O000OOOO0OOOOOO00 =None #line:24
+	if O000OOOO0OOOOOO00 is not None :#line:27
+		while O000OOOO0OOOOOO00 [3 ]is not None :#line:28
+			path .append (O000OOOO0OOOOOO00 [0 ])#line:29
+			OO0O0000O00OO00OO =O000OOOO0OOOOOO00 [3 ]#line:30
+			for OOOO00O00OOOOO0O0 in list (OO0O000O00O0O000O ):#line:31
+				if OO0O0000O00OO00OO ==OOOO00O00OOOOO0O0 [0 ]:#line:32
+					O000OOOO0OOOOOO00 =OOOO00O00OOOOO0O0 #line:33
+					break #line:34
+		path .append (O000OOOO0OOOOOO00 [0 ])#line:35
+		path .reverse ()#line:36
+	OO000O0000O0000O0 =list (OO000O0000O0000O0 )	
 	### YOUR CODE GOES ABOVE HERE ###
 	return path, closed
 	
 	
-
+def foow (node ,network ,goal ):#line:1
+	O00O00O00OO00O0OO =[]#line:2
+	for O0000OO0OO0OOOO0O in network :#line:3
+		if O0000OO0OO0OOOO0O [0 ]==node [0 ]:#line:4
+			O00O00O00OO00O0OO .append ((O0000OO0OO0OOOO0O [1 ],node [1 ]+distance (O0000OO0OO0OOOO0O [0 ],O0000OO0OO0OOOO0O [1 ]),distance (O0000OO0OO0OOOO0O [1 ],goal ),node [0 ]))#line:5
+		elif O0000OO0OO0OOOO0O [1 ]==node [0 ]:#line:6
+			O00O00O00OO00O0OO .append ((O0000OO0OO0OOOO0O [0 ],node [1 ]+distance (O0000OO0OO0OOOO0O [0 ],O0000OO0OO0OOOO0O [1 ]),distance (O0000OO0OO0OOOO0O [0 ],goal ),node [0 ]))#line:7
+	return O00O00O00OO00O0OO 
+	
 
 def myUpdate(nav, delta):
 	### YOUR CODE GOES BELOW HERE ###
-
+	if nav .getPath ()is not None :#line:3
+		OOOOO0OOOOO0O00OO =nav .world .getGates ()#line:4
+		O0OO0000O0OO0O0O0 =nav .agent .getLocation ()#line:14
+		for O00OO000OO00O0O0O in nav .getPath ()+[nav .getDestination ()]:#line:15
+			if O0OO0000O0OO0O0O0 is not None :#line:16
+				OO0O0O00O0OOOOOOO =rayTraceWorld (O0OO0000O0OO0O0O0 ,O00OO000OO00O0O0O ,OOOOO0OOOOO0O00OO )#line:17
+				if OO0O0O00O0OOOOOOO is not None :#line:18
+					nav .setPath (None )#line:20
+					nav .agent .stopMoving ()#line:21
+					return None #line:22
+			O0OO0000O0OO0O0O0 =O00OO000OO00O0O0O #line:23		
 	### YOUR CODE GOES ABOVE HERE ###
 	return None
-
-
 
 def myCheckpoint(nav):
 	### YOUR CODE GOES BELOW HERE ###
 
 	### YOUR CODE GOES ABOVE HERE ###
 	return None
-
 
 ### Returns true if the agent can get from p1 to p2 directly without running into an obstacle.
 ### p1: the current location of the agent
@@ -140,7 +172,19 @@ def myCheckpoint(nav):
 ### agent: the Agent object
 def clearShot(p1, p2, worldLines, worldPoints, agent):
 	### YOUR CODE GOES BELOW HERE ###
-	
+	O0OOOO0OO0OOOO0O0 =agent .getRadius ()*4.0 #line:3
+	O0O00O000OO0OO000 =rayTraceWorld (p1 ,p2 ,worldLines )#line:4
+	if O0O00O000OO0OO000 ==None :#line:5
+		O00O0OO0O00OOO000 =False #line:6
+		for O0OOOOO0O000O0OO0 in worldPoints :#line:7
+			if minimumDistance ((p1 ,p2 ),O0OOOOO0O000O0OO0 )<O0OOOO0OO0OOOO0O0 :#line:8
+				O00O0OO0O00OOO000 =True #line:9
+		if not O00O0OO0O00OOO000 :#line:10
+			return True #line:11
 	### YOUR CODE GOES ABOVE HERE ###
 	return False
 
+
+#===============================================================#
+# Obfuscated by Oxyry Python Obfuscator (http://pyob.oxyry.com) #
+#===============================================================#

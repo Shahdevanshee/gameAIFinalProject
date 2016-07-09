@@ -63,20 +63,21 @@ class BTNode(object):
 	### Perform a behavior, should be called every tick
 	### Returns True if the behavior succeeds, False if the behavior fails, or None if the behavior should continue to execute during the next tick.
 	def execute(self, delta = 0):
-		print "execute", self.id
+		#print "execute", self.id
 		if self.first:
 			self.enter()
 			self.first = False
 		return True
 			
 	def enter(self):
-		print "enter", self.id
+		#print "enter", self.id
 		return None
 	
 	### Print each node id in tree in a depth-first fashion
 	def printTree(self):
 		print self.id
 		for child in self.children:
+			x = 1
 			child.printTree()
 
 	### Reset the tree for another run. For BTNode, this means moving the current child counter back to 0.
@@ -117,37 +118,70 @@ class BTNode(object):
 
 
 class Sequence(BTNode):
+	def parseArgs(self, args):
+		self.current_child_index = 0
 
 	### execute() is called every tick. It recursively tries to execute the currently indexed child.
 	### If a child fails, the sequence fails and returns False.
 	### If a child succeeds, the sequence goes on to the next child on the next tick. If the sequence gets to the end of the list, with all children succeeding, the sequence succeeds.
 	### If a child requires several ticks to complete execution, then the child will return None. If a child returns none, the sequence also returns None.
 	### IF a sequence node has no children, it succeeds automatically.
-	def execute(self, delta = 0):
+	def execute(self, delta=0):
 		BTNode.execute(self, delta)
 		### YOUR CODE GOES BELOW HERE ###
+		num_children = self.getNumChildren()
 
-		### YOUR CODE GOES ABOVE HERE ###
-		return True
+		if num_children == 0:
+			return True
+		if self.current_child_index == num_children:
+			self.current_child_index = 0
+			return True
+
+		child = self.getChild(self.current_child_index)
+
+		result = child.execute(delta)
+		if result == None:
+			return None
+		if result == False:
+			return False
+		self.current_child_index += 1
+		return None
+
 
 ###########################
 ### Selector
 ###
 ### A selector node tries each child in order until one succeeds or they all fail. If any child succeeds, the selector node also succeeds and stops trying children. If all children fail, then the selector node also fails.
-		
+
 class Selector(BTNode):
+	def parseArgs(self, args):
+		self.current_child_index = 0
 
 	### execute() is called every tick. It recursively tries to execute the currently indexed child.
 	### If the child succeeds, the selector node succeeds and returns True.
 	### IF the child fails, the selector goes on to the next child in the next tick. If the selector gets to the end of the list and all children have failed, the selector fails and returns False.
 	### If a child requires several ticks to complete execution, then the child will return None. If a child returns none, the sequence also returns None.
 	### IF a sequence node has no children, it succeeds fails.
-	def execute(self, delta = 0):
+	def execute(self, delta=0):
 		BTNode.execute(self, delta)
 		### YOUR CODE GOES BELOW HERE ###
+		num_children = self.getNumChildren()
 
-		### YOUR CODE GOES ABOVE HERE ###
-		return False
+		if num_children == 0:
+			return False
+		if self.current_child_index == num_children:
+			self.current_child_index = 0
+			return False
+
+		child = self.getChild(self.current_child_index)
+
+		result = child.execute(delta)
+		if result == None:
+			return None
+		if result == True:
+			return True
+		self.current_child_index += 1
+		return None
 
 
 
