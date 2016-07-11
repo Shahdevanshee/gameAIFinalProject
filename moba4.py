@@ -203,7 +203,7 @@ def rotateVector(vector,degrees):
 	theta = math.radians(degrees)
 	x_prime = math.cos(theta)*vector[0] - math.sin(theta)*vector[1]
 	y_prime = math.sin(theta)*vector[0] + math.cos(theta)*vector[1]
-	return (x_prime,y_prime)
+	return (x_prime,-y_prime)
 #endregion
 
 class Hero(MOBAAgent):
