@@ -336,7 +336,12 @@ class Formation(BTNode):
 		# First argument is the node ID
 		if len(args) > 0:
 			self.id = args[0]
-
+	def getHero(self,npc_list):
+		hero = None
+		for i in npc_list:
+			if isinstance(i,PlayerHero):
+				return i
+		return None
 	def enter(self):
 		BTNode.enter(self)
 		self.timer = 50
@@ -345,8 +350,9 @@ class Formation(BTNode):
 		# ... right now, this is a placeholder...
 		#  should be calculated on update for the hero; the id of the
 		# heros indexes the nodes list
-		nodes = [(125,145),(150,130),(150,160)]
-		orientations = [0.,0.,0.]
+		hero = self.getHero(self.agent.world.getNPCsForTeam(self.agent.getTeam()))
+		nodes = hero.nodes
+		orientations = [self.agent.orientation,self.agent.orientation,self.agent.orientation]
 
 		self.formation_node = nodes[self.agent.id]
 		self.orientation = orientations[self.agent.id]
@@ -357,13 +363,20 @@ class Formation(BTNode):
 
 	def execute(self, delta = 0):
 		ret = BTNode.execute(self, delta)
+
+		#region Formation Variables
+		hero = self.getHero(self.agent.world.getNPCsForTeam(self.agent.getTeam()))
+		self.formation_node = hero.nodes[self.agent.id]
+		self.orientation = hero.orientation
+		#endregion
+
 		self.agent.turnToAngle(self.orientation)
 		if self.agent.navigator.doneMoving():
 			return True
 		else:
 			# executing
 			self.timer = self.timer - 1
-			if self.timer <= 0:
+			if self.timer <= 0 or distance(self.agent.position,self.formation_node) > 5:
 				self.timer = 50
 				self.agent.navigateTo(self.formation_node)
 			return None

@@ -28,19 +28,35 @@ from mybehaviors import *
 
 ##############################################################
 ### MyHero
+#region Helper Functions
+def rotateVector(vector,degrees):
+	theta = math.radians(degrees)
+	x_prime = math.cos(theta)*vector[0] - math.sin(theta)*vector[1]
+	y_prime = math.sin(theta)*vector[0] + math.sin(theta)*vector[1]
+	return (x_prime,y_prime)
+#endregion
 
 class MyHero(Hero, BehaviorTree):
 	
 	def __init__(self, position, orientation, world, image = AGENT, speed = SPEED, viewangle = 360, hitpoints = HEROHITPOINTS, firerate = FIRERATE, bulletclass = BigBullet, dodgerate = DODGERATE, areaeffectrate = AREAEFFECTRATE, areaeffectdamage = AREAEFFECTDAMAGE):
 		Hero.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass, dodgerate, areaeffectrate, areaeffectdamage)
 		BehaviorTree.__init__(self)
-	
+
+		pos = self.position
+
+		self.node_vectors = [(50,0),(75,-15),(75,15)]
+		self.nodes = [(125,145),(150,130),(150,160)]
 	
 	def update(self, delta):
 		Hero.update(self, delta)
 		BehaviorTree.update(self, delta)
-	
-	
+
+		# Update Formation Nodes
+		healer_vector = rotateVector(self.node_vectors[0], self.orientation)
+		companion1_vector = rotateVector(self.node_vectors[1], self.orientation)
+		companion2_vector = rotateVector(self.node_vectors[2], self.orientation)
+		self.nodes = [healer_vector, companion1_vector, companion2_vector]
+
 	def start(self):
 		# Build the tree
 		spec = treeSpec(self)
@@ -51,7 +67,8 @@ class MyHero(Hero, BehaviorTree):
 		# Start the agent
 		Hero.start(self)
 		BehaviorTree.start(self)
-	
+
+
 	
 	def stop(self):
 		Hero.stop(self)

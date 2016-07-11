@@ -198,6 +198,13 @@ class MOBAAgent(VisionAgent):
 
 #######################
 ### Hero
+#region Helper Functions
+def rotateVector(vector,degrees):
+	theta = math.radians(degrees)
+	x_prime = math.cos(theta)*vector[0] - math.sin(theta)*vector[1]
+	y_prime = math.sin(theta)*vector[0] + math.cos(theta)*vector[1]
+	return (x_prime,y_prime)
+#endregion
 
 class Hero(MOBAAgent):
 
@@ -218,6 +225,9 @@ class Hero(MOBAAgent):
 		self.areaEffectRate = areaeffectrate
 		self.areaEffectDamage = areaeffectdamage
 		self.areaEffectTimer = 0
+		self.node_vectors = [(50,0),(75,-15),(75,15)]
+		self.nodes = [(125,145),(150,130),(150,160)]
+
 
 	def update(self, delta = 0):
 		MOBAAgent.update(self, delta)
@@ -231,6 +241,18 @@ class Hero(MOBAAgent):
 			if self.areaEffectTimer >= self.areaEffectRate:
 				self.canareaeffect = True
 				self.areaEffectTimer = 0
+		# 1: rotate vectors
+		healer_vector = rotateVector(self.node_vectors[0], self.orientation)
+		companion1_vector = rotateVector(self.node_vectors[1], self.orientation)
+		companion2_vector = rotateVector(self.node_vectors[2], self.orientation)
+
+		# 2: move vectors to player position
+		healer_vector = self.position[0]+healer_vector[0],self.position[1]+healer_vector[1]
+		companion1_vector = self.position[0]+companion1_vector[0],self.position[1]+companion1_vector[1]
+		companion2_vector = self.position[0]+companion2_vector[0],self.position[1]+companion2_vector[1]
+
+		self.nodes = [healer_vector, companion1_vector, companion2_vector]
+
 
 	def dodge(self, angle = None):
 		if self.candodge:
