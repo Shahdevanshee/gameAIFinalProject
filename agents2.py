@@ -343,6 +343,85 @@ class FindCover(BTNode):
 		# 	# executing
 		# 	return None
 		return ret
+class LeftSideDaemon(BTNode):
+	### percentage: percentage of hitpoints that must have been lost to fail the daemon check
+
+	def parseArgs(self, args):
+		BTNode.parseArgs(self, args)
+		self.percentage = 0.4
+		# First argument is the factor
+		if len(args) > 0:
+			self.percentage = args[0]
+		# Second argument is the node ID
+		if len(args) > 1:
+			self.id = args[1]
+
+	def execute(self, delta=0):
+		ret = BTNode.execute(self, delta)
+		world  = self.agent.world
+
+		# currently, no logic implemented
+		return self.getChild(0).execute(delta)
+
+		return ret
+
+
+class Formation(BTNode):
+
+	### target: the hero to chase
+	### timer: how often to replan
+	def parseArgs(self, args):
+		BTNode.parseArgs(self, args)
+		self.target = None
+		self.timer = 50
+		# First argument is the node ID
+		if len(args) > 0:
+			self.id = args[0]
+	def getHero(self,npc_list):
+		hero = None
+		for i in npc_list:
+			if isinstance(i,PlayerHero):
+				return i
+		return None
+	def enter(self):
+		BTNode.enter(self)
+		self.timer = 50
+
+		#nodes to navigate to; these are points around the main character
+		# ... right now, this is a placeholder...
+		#  should be calculated on update for the hero; the id of the
+		# heros indexes the nodes list
+		hero = self.getHero(self.agent.world.getNPCsForTeam(self.agent.getTeam()))
+		nodes = hero.nodes
+		orientations = [self.agent.orientation,self.agent.orientation,self.agent.orientation]
+
+		self.formation_node = nodes[self.agent.id]
+		self.orientation = orientations[self.agent.id]
+
+		self.agent.turnToAngle(self.orientation)
+		self.agent.navigateTo(self.formation_node)
+		return None
+
+	def execute(self, delta = 0):
+		ret = BTNode.execute(self, delta)
+
+		#region Formation Variables
+		hero = self.getHero(self.agent.world.getNPCsForTeam(self.agent.getTeam()))
+		self.formation_node = hero.nodes[self.agent.id]
+		self.orientation = hero.orientation
+		#endregion
+
+		self.agent.turnToAngle(self.orientation)
+		if self.agent.navigator.doneMoving():
+			return True
+		else:
+			# executing
+			self.timer = self.timer - 1
+			if self.timer <= 0 or distance(self.agent.position,self.formation_node) > 5:
+				self.timer = 50
+				self.agent.navigateTo(self.formation_node)
+			return None
+		return ret
 
 class HealClosestTeammate(BTNode):
 
