@@ -35,7 +35,7 @@ class MOBAWorld2(MOBAWorld):
 
 	def doKeyDown(self, key):
 		MOBAWorld.doKeyDown(self, key)
-		if key == 98: #'b'
+		if key == K_e: #'b'
 			if isinstance(self.agent, PlayerHero):
 				self.agent.bark()
 
@@ -119,17 +119,17 @@ class Healer(MOBAAgent, Barker):
 
 
 ###################################################
-#region MyHealer
+### MyHealer
 
 class MyHealer(Healer, BehaviorTree):
 
-	def __init__(self, position, orientation, world, image = GRUNT, speed = SPEED, viewangle = 360, hitpoints = HITPOINTS, firerate = FIRERATE, bulletclass = SmallBullet, healrate = HEALRATE,id=None):
+	def __init__(self, position, orientation, world, image = GRUNT, speed = SPEED, viewangle = 360, hitpoints = HITPOINTS, firerate = FIRERATE, bulletclass = SmallBullet, healrate = HEALRATE):
 		Healer.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass, healrate)
 		BehaviorTree.__init__(self)
 		self.states = []
 		self.startState = None
-		self.id = id
 		### YOUR CODE GOES BELOW HERE ###
+		self.team = self.getTeam()
 
 		### YOUR CODE GOES ABOVE HERE ###
 
@@ -145,7 +145,7 @@ class MyHealer(Healer, BehaviorTree):
 		spec = healerTreeSpec(self)
 		tree = myHealerBuildTree(self)
 		if spec is not None and (isinstance(spec, list) or isinstance(spec, tuple)):
-			self.buildTree(spec)
+			self.myHealerBuildTree(spec)
 		elif tree is not None:
 			self.setTree(tree)
 		elif len(self.states) > 0 and self.startState is not None:
@@ -176,17 +176,16 @@ class MyHealer(Healer, BehaviorTree):
 		self.heal(hero)
 		### YOUR CODE GOES ABOVE HERE ###
 
-#endregion
-###################################################
-#region MyCompanionHero
+##########################################################
+
 class MyCompanionHero(Hero, BehaviorTree, Barker):
 
-	def __init__(self, position, orientation, world, image = AGENT, speed = SPEED, viewangle = 360, hitpoints = HEROHITPOINTS, firerate = FIRERATE, bulletclass = BigBullet, dodgerate = DODGERATE, areaeffectrate = AREAEFFECTRATE, areaeffectdamage = AREAEFFECTDAMAGE,id=None):
+	def __init__(self, position, orientation, world, image = AGENT, speed = SPEED, viewangle = 360, hitpoints = HEROHITPOINTS, firerate = FIRERATE, bulletclass = BigBullet, dodgerate = DODGERATE, areaeffectrate = AREAEFFECTRATE, areaeffectdamage = AREAEFFECTDAMAGE):
 		Hero.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass, dodgerate, areaeffectrate, areaeffectdamage)
 		BehaviorTree.__init__(self)
 		self.states = []
 		self.startState = None
-		self.id = id
+		self.id = None
 		### YOUR CODE GOES BELOW HERE ###
 
 		### YOUR CODE GOES ABOVE HERE ###
@@ -232,12 +231,10 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
 	def hearBark(self, thebark):
 		Barker.hearBark(self, thebark)
 		### YOUR CODE GOES BELOW HERE
-
 		### YOUR CODE GOES ABOVE HERE
-#endregion
-###################################################
 
 
+##########################################################
 ### IDLE STATE
 
 class Idle(State):
@@ -280,7 +277,7 @@ def myHealerBuildTree(agent):
 	myid = str(agent.getTeam())
 	root = None
 	### YOUR CODE GOES BELOW HERE ###
-
+	
 	### YOUR CODE GOES ABOVE HERE ###
 	return root
 
@@ -288,7 +285,7 @@ def companionTreeSpec(agent):
 	myid = str(agent.getTeam())
 	spec = None
 	### YOUR CODE GOES BELOW HERE ###
-	spec = [Selector, [LeftSideDaemon, Formation]]#, TacticalCover]
+	
 	### YOUR CODE GOES ABOVE HERE ###
 	return spec
 
@@ -313,12 +310,12 @@ def makeNode(type, agent, *args):
 ##########################################################
 ### YOUR STATES AND BEHAVIORS GO HERE
 
-class LeftSideDaemon(BTNode):
-	### percentage: percentage of hitpoints that must have been lost to fail the daemon check
-
+# FINDING COVER AS THE DEFAULT STATE OF BEING FOR HEALERS AND POSSIBLY OTHER MINIONS?
+class FindCover(BTNode):
 	def parseArgs(self, args):
 		BTNode.parseArgs(self, args)
-		self.percentage = 0.4
+		self.target = None
+		self.timer = 50
 		# First argument is the factor
 		if len(args) > 0:
 			self.percentage = args[0]
@@ -326,20 +323,32 @@ class LeftSideDaemon(BTNode):
 		if len(args) > 1:
 			self.id = args[1]
 
-	def execute(self, delta=0):
+	def enter(self):
+		BTNode.enter(self)
+		#temporary go to base, but should go to nearest obstacle cover area
+		self.agent.navigateTo(self.agent.world.getBaseForTeam(self.agent.getTeam()).getLocation())
+
+	def execute(self):
 		ret = BTNode.execute(self, delta)
-		world  = self.agent.world
-
-		# currently, no logic implemented
-		return self.getChild(0).execute(delta)
-
+		# if self.agent.getHitpoints() > self.agent.getMaxHitpoints():
+		# 	# fail executability conditions
+		# 	print "exec", self.id, "false"
+		# 	return False
+		# elif self.agent.getHitpoints() == self.agent.getMaxHitpoints():
+		# 	# Exection succeeds
+		# 	print "exec", self.id, "true"
+		# 	print 'IM GOING TO RETREAT'
+		# 	return True
+		# else:
+		# 	# executing
+		# 	return None
 		return ret
 
+class HealClosestTeammate(BTNode):
 
-class Formation(BTNode):
-
-	### target: the hero to chase
+	### target: the minion to chase
 	### timer: how often to replan
+
 	def parseArgs(self, args):
 		BTNode.parseArgs(self, args)
 		self.target = None
@@ -347,49 +356,46 @@ class Formation(BTNode):
 		# First argument is the node ID
 		if len(args) > 0:
 			self.id = args[0]
-	def getHero(self,npc_list):
-		hero = None
-		for i in npc_list:
-			if isinstance(i,PlayerHero):
-				return i
-		return None
+
 	def enter(self):
 		BTNode.enter(self)
 		self.timer = 50
+		team = self.agent.world.getNPCsForTeam(self.agent.getTeam())
+		if len(team) > 0:
+			best = None
+			HP = 0
+			for e in team:
+				if isinstance(e, Minion):
+					hp = e.getHitpoints()
+					if best == None or HP > hp:
+						best = e
+						HP = hp
+			self.target = best
+		if self.target is not None:
+			navTarget = self.chooseNavigationTarget()
+			if navTarget is not None:
+				self.agent.navigateTo(navTarget)
 
-		#nodes to navigate to; these are points around the main character
-		# ... right now, this is a placeholder...
-		#  should be calculated on update for the hero; the id of the
-		# heros indexes the nodes list
-		hero = self.getHero(self.agent.world.getNPCsForTeam(self.agent.getTeam()))
-		nodes = hero.nodes
-		orientations = [self.agent.orientation,self.agent.orientation,self.agent.orientation]
-
-		self.formation_node = nodes[self.agent.id]
-		self.orientation = orientations[self.agent.id]
-
-		self.agent.turnToAngle(self.orientation)
-		self.agent.navigateTo(self.formation_node)
-		return None
 
 	def execute(self, delta = 0):
 		ret = BTNode.execute(self, delta)
-
-		#region Formation Variables
-		hero = self.getHero(self.agent.world.getNPCsForTeam(self.agent.getTeam()))
-		self.formation_node = hero.nodes[self.agent.id]
-		self.orientation = hero.orientation
-		#endregion
-
-		self.agent.turnToAngle(self.orientation)
-		if self.agent.navigator.doneMoving():
-			return True
+		if self.target == None or self.target.isAlive() == False:
+			# failed execution conditions
+			print "exec", self.id, "false"
+			return False
+		# elif distance(self.agent.getLocation(), self.target.getLocation()) < BIGBULLETRANGE:
+		# 	# succeeded
+		# 	print 'IM FINDING TEAM NOW'
+		# 	print "exec", self.id, "true"
+		# 	return True
 		else:
 			# executing
 			self.timer = self.timer - 1
-			if self.timer <= 0 or distance(self.agent.position,self.formation_node) > 5:
+			if self.timer <= 0:
 				self.timer = 50
-				self.agent.navigateTo(self.formation_node)
+				navTarget = self.chooseNavigationTarget()
+				if navTarget is not None:
+					self.agent.navigateTo(navTarget)
 			return None
 		return ret
 
@@ -514,4 +520,4 @@ class HealerDaemon(BTNode):
 			# Check didn't fail, return child's status
 			# return self.getChild(0).execute(delta)
 		return ret
-		
+	
