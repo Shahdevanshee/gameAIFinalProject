@@ -311,8 +311,6 @@ def makeNode(type, agent, *args):
 ### YOUR STATES AND BEHAVIORS GO HERE
 
 class LeftSideDaemon(BTNode):
-	### percentage: percentage of hitpoints that must have been lost to fail the daemon check
-
 	def parseArgs(self, args):
 		BTNode.parseArgs(self, args)
 		self.percentage = 0.4
