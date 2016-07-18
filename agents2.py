@@ -145,7 +145,7 @@ class MyHealer(Healer, BehaviorTree):
 		spec = healerTreeSpec(self)
 		tree = myHealerBuildTree(self)
 		if spec is not None and (isinstance(spec, list) or isinstance(spec, tuple)):
-			self.myHealerBuildTree(spec)
+			self.buildTree(spec)
 		elif tree is not None:
 			self.setTree(tree)
 		elif len(self.states) > 0 and self.startState is not None:
