@@ -374,8 +374,9 @@ class Formation(BTNode):
 
 		#region Formation Variables
 		hero = self.getHero(self.agent.world.getNPCsForTeam(self.agent.getTeam()))
-		self.formation_node = hero.nodes[self.agent.id]
-		self.orientation = hero.orientation
+		if (not hero == None):
+			self.formation_node = hero.nodes[self.agent.id]
+			self.orientation = hero.orientation
 		#endregion
 
 		self.agent.turnToAngle(self.orientation)
