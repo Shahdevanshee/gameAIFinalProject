@@ -179,6 +179,7 @@ class MOBAAgent(VisionAgent):
 
     def die(self):
         VisionAgent.die(self)
+        
         # Give a damage modifier
         if self.lastDamagedBy is not None and isinstance(self.lastDamagedBy, MOBAAgent):
             self.lastDamagedBy.creditKill(self)

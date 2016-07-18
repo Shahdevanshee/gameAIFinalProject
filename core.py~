@@ -504,7 +504,6 @@ class Navigator():
     
     ### Callback from Agent. Agent has collided with something.
     def collision(self, thing):
-        pass
         #print "Collision"
     
     ### This function gets called by the agent to figure out if some shortcutes can be taken when traversing the path.
