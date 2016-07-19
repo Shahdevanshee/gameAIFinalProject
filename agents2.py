@@ -100,11 +100,13 @@ class Healer(MOBAAgent, Barker):
 
     def die(self):
         MOBAAgent.die(self)
+        self.world.addNPC(self)
         mybase = self.world.getBaseForTeam(self.getTeam())
         offset = (mybase.getLocation()[0]-self.getLocation()[0],
         mybase.getLocation()[1]-self.getLocation()[1])
         self.move(offset)
-
+        self.start()
+    
     def update(self, delta = 0):
         MOBAAgent.update(self, delta)
         if self.canHeal == False:
@@ -203,11 +205,13 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
 
     def die(self):
         Hero.die(self)
+        self.world.addNPC(self)
         mybase = self.world.getBaseForTeam(self.getTeam())
         offset = (mybase.getLocation()[0]-self.getLocation()[0],
         mybase.getLocation()[1]-self.getLocation()[1])
         self.move(offset)
         self.level = 0
+        self.start()
 
 
         ### YOUR CODE GOES ABOVE HERE ###

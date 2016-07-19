@@ -504,6 +504,7 @@ class Navigator():
     
     ### Callback from Agent. Agent has collided with something.
     def collision(self, thing):
+        pass
         #print "Collision"
     
     ### This function gets called by the agent to figure out if some shortcutes can be taken when traversing the path.
@@ -944,6 +945,7 @@ class GameWorld():
 
     def run(self):
         pygame.key.set_repeat(1,50)
+        font = pygame.font.Font(None, 20)
         self.sprites = pygame.sprite.RenderPlain((self.agent))
 #        for r in self.resources:
 #            self.sprites.add(r)
@@ -960,6 +962,7 @@ class GameWorld():
         while True:
             clock.tick(TICK)
             delta = clock.get_rawtime()
+            player_health=font.render('HP: '+ str(self.agent.hitpoints),1,(255,255,255))
             self.handleEvents()
             self.update(delta)
             self.sprites.update(delta) 

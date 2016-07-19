@@ -100,11 +100,13 @@ class Healer(MOBAAgent, Barker):
 
     def die(self):
         MOBAAgent.die(self)
+        self.world.addNPC(self)
         mybase = self.world.getBaseForTeam(self.getTeam())
         offset = (mybase.getLocation()[0]-self.getLocation()[0],
         mybase.getLocation()[1]-self.getLocation()[1])
         self.move(offset)
-
+        self.start()
+    
     def update(self, delta = 0):
         MOBAAgent.update(self, delta)
         if self.canHeal == False:
@@ -122,11 +124,10 @@ class Healer(MOBAAgent, Barker):
     def areaEffectHeal(self):
         if self.canareaeffect:
             self.canareaeffect = False
-            pygame.draw.circle(self.world.background, (255, 0, 0), (int(self.getLocation()[0]), int(self.getLocation()[1])), int(self.getRadius()*2), 1)
-            for x in self.world.getEnemyNPCs(self.getTeam()) + self.world.getEnemyBases(self.getTeam()) + self.world.getEnemyTowers(self.getTeam()):
+            pygame.draw.circle(self.world.background, (0, 0, 255), (int(self.getLocation()[0]), int(self.getLocation()[1])), int(self.getRadius()*2), 1)
+            for x in self.getNPCsForTeam(self.team):
                 if distance(self.getLocation(), x.getLocation()) < (self.getRadius()*AREAEFFECTRANGE)+(x.getRadius()):
-                    x.damage(self.areaEffectDamage + self.level)
-                    self.world.damageCaused(self, x, self.areaEffectDamage)
+                    x.hitpoints+=(self.areaEffectDamage)
             return True
         return False
 
@@ -204,6 +205,7 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
 
     def die(self):
         Hero.die(self)
+        self.world.addNPC(self)
         mybase = self.world.getBaseForTeam(self.getTeam())
         offset = (mybase.getLocation()[0]-self.getLocation()[0],
         mybase.getLocation()[1]-self.getLocation()[1])
