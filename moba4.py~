@@ -170,6 +170,7 @@ class MOBAAgent(VisionAgent):
         # Agent dies if it hits an obstacle
         if isinstance(thing, Obstacle):
             self.stopMoving()
+            print 'collison'
 
     def getMaxHitpoints(self):
         return self.maxHitpoints
@@ -179,7 +180,6 @@ class MOBAAgent(VisionAgent):
 
     def die(self):
         VisionAgent.die(self)
-        
         # Give a damage modifier
         if self.lastDamagedBy is not None and isinstance(self.lastDamagedBy, MOBAAgent):
             self.lastDamagedBy.creditKill(self)

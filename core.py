@@ -84,8 +84,26 @@ class Mover(pygame.sprite.Sprite, Thing):
         return self.maxradius
 
     def move(self, offset):
-        self.position = tuple(map(lambda x, y: x + y, self.position, offset))
-        self.rect.center = self.position
+        if self.world.obstacles:
+            x=offset[0]
+            y=offset[1]
+            p1=(self.rect.topleft[0]+x,self.rect.topleft[1]+y)
+            p2=(self.rect.topright[0]+x,self.rect.topleft[1]+y)
+            p3=(self.rect.bottomleft[0]+x,self.rect.topleft[1]+y)
+            p4=(self.rect.bottomright[0]+x,self.rect.topleft[1]+y)
+            
+            if not (insideObstacle(p1, self.world.obstacles) or insideObstacle(p2, self.world.obstacles) or insideObstacle(p3, self.world.obstacles) or insideObstacle(p4, self.world.obstacles)):
+                self.position = tuple(map(lambda c, v: c + v, self.position, offset))
+                self.rect.center = self.position
+            else:
+                self.stopMoving()
+        else:
+            self.position = tuple(map(lambda c, v: c + v, self.position, offset))
+            self.rect.center = self.position
+
+
+        #self.position = tuple(map(lambda x, y: x + y, self.position, offset))
+        #self.rect.center = self.position
     
     ### Tells the agent to face a point
     def turnToFace(self, pos):
@@ -504,7 +522,7 @@ class Navigator():
     
     ### Callback from Agent. Agent has collided with something.
     def collision(self, thing):
-        pass
+        return None
         #print "Collision"
     
     ### This function gets called by the agent to figure out if some shortcutes can be taken when traversing the path.
@@ -1034,11 +1052,18 @@ class GameWorld():
             y+=SPEED[1]
         if keys[K_d]: 
             x+=SPEED[0]
-        self.agent.move((x,y))
 
-        if keys[K_LSHIFT] and not (x==0.0 and y==0.0):
-            angle=math.degrees(numpy.arctan2(x,y))-90.0
-            self.agent.dodge(angle)
+        p1=(self.agent.rect.topleft[0]+x,self.agent.rect.topleft[1]+y)
+        p2=(self.agent.rect.topright[0]+x,self.agent.rect.topleft[1]+y)
+        p3=(self.agent.rect.bottomleft[0]+x,self.agent.rect.topleft[1]+y)
+        p4=(self.agent.rect.bottomright[0]+x,self.agent.rect.topleft[1]+y)
+        
+        if not (insideObstacle(p1, self.obstacles) or insideObstacle(p2, self.obstacles) or insideObstacle(p3, self.obstacles) or insideObstacle(p4, self.obstacles)):
+            self.agent.move((x,y))
+
+            if keys[K_LSHIFT] and not (x==0.0 and y==0.0):
+                angle=math.degrees(numpy.arctan2(x,y))-90.0
+                self.agent.dodge(angle)
 
         if keys[K_SPACE]:
             self.agent.areaEffect()

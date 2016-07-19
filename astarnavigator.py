@@ -201,12 +201,13 @@ def myCheckpoint(nav):
 ### agent: the Agent object
 def clearShot(p1, p2, worldLines, worldPoints, agent):
     ### YOUR CODE GOES BELOW HERE ###
-    z=[] 
-    radius=(2**1/2)*agent.getMaxRadius()
-    for point in worldPoints:
-        z.append(minimumDistance((p1,p2),point))
-    if rayTraceWorld(p1,p2,worldLines)==None and min(z)>radius:
-        return True
+    if p1 and p2:    
+        z=[] 
+        radius=(2**1/2)*agent.getMaxRadius()
+        for point in worldPoints:
+            z.append(minimumDistance((p1,p2),point))
+        if rayTraceWorld(p1,p2,worldLines)==None and min(z)>radius:
+            return True
     ### YOUR CODE GOES ABOVE HERE ###
     return False
 
