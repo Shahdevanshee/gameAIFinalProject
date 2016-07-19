@@ -63,24 +63,22 @@ class PlayerHero(Hero, Barker):
         mybase.getLocation()[1]-self.getLocation()[1])
         self.move(offset)
         self.level = 0
-        '''
-        ### Replace the player's avatar with a ghost avatar
-        ghost = GhostAgent(GHOST, self.getLocation(), 0, SPEED, self.world, HITPOINTS, FIRERATE, None)
-        ghost.setNavigator(Navigator())
-        ghost.team = 0
-        if self in self.world.movers:
-            self.world.movers.remove(self)
-        if self in self.world.sprites:
-            self.world.sprites.remove(self)
-        self.world.sprites.add(ghost)
-        self.world.movers.append(ghost)
-        self.world.agent = ghost
-        '''
+
     def bark(self):
         Barker.bark(self)
         thebark = None
         ### Set thebark to whatever is the contextually relevant thing (probably a string)
         ### YOUR CODE GOES BELOW HERE ###
+
+        '''
+        Rules:
+        Automatic: If enemies in range, heros attack, healer hides/heals
+                    If pc far away, go to formation
+                    If pc health low, healer heals, heros go to
+        
+        Barked: If Hero in cover, go to cover
+                
+        '''
 
         ### YOUR CODE GOES ABOVE HERE ###
         for n in self.world.getNPCsForTeam(self.getTeam()):
@@ -120,6 +118,16 @@ class Healer(MOBAAgent, Barker):
             if isinstance(agent, MOBAAgent) and distance(self.getLocation(), agent.getLocation()) < self.getRadius() + agent.getRadius():
                 agent.hitpoints = agent.maxHitpoints
                 self.canHeal = False
+
+    def areaEffectHeal(self):
+        if self.canareaeffect:
+            self.canareaeffect = False
+            pygame.draw.circle(self.world.background, (0, 0, 255), (int(self.getLocation()[0]), int(self.getLocation()[1])), int(self.getRadius()*2), 1)
+            for x in self.getNPCsForTeam(self.team):
+                if distance(self.getLocation(), x.getLocation()) < (self.getRadius()*AREAEFFECTRANGE)+(x.getRadius()):
+                    x.hitpoints+=(self.areaEffectDamage)
+            return True
+        return False
 
 
 
