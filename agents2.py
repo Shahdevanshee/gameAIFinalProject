@@ -90,21 +90,6 @@ class MOBAWorld2(MOBAWorld):
                 cover_nodes.append(test_cartesian)
                 point_counter+=1
 
-
-            # preliminary_point_polar =
-            # search_radius = 50
-            # point_found = False
-            # iteration_counter = 0
-            # while iteration_counter < 10:
-            #     test_r = numpy.random.randint(preliminary_point_polar[0] - search_radius,high = preliminary_point_polar[0] + search_radius)
-            #     test_theta = 0.5*(numpy.random.random() - 0.5)*((shadow[1]+shadow[2])/2) + preliminary_point_polar[1]
-            #
-            #     test_cartesian = GamePoint_From_RelativePolarCoordinate((test_r,test_theta),enemy_base.position)
-            #
-            #     if (roomForFormation(test_cartesian,self)):
-            #         point_found = True
-            #         cover_nodes.append(test_cartesian)
-            #     iteration_counter +=1;
         self.obstacleCoverNodes = cover_nodes
         self.shadowParameterNodes = shadow_nodes
 
