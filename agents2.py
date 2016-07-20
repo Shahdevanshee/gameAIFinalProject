@@ -25,19 +25,65 @@ from core import *
 from agents import *
 from moba4 import *
 from behaviortree import *
-
+from cover_and_shadow_functions import *
 
 
 ############################################
 ### MOBAWorld2
+def roomForFormation(point,MOBAWorld):
+	# Complete this
+	worldlines = MOBAWorld.getLines()
+
+	for line in worldlines:
+		if minimumDistance(line,point) < 150:
+			return False
+	return True
 
 class MOBAWorld2(MOBAWorld):
+	def getBaseShadows(self):
+		###################### Our Code Here
+		all_bases = self.getBases()
+		enemy_base_index = numpy.argmax([base.position[0] for base in all_bases])
+		enemy_base = all_bases[enemy_base_index]
+		manual_obstacles = self.getObstacles()
+
+		manual_obstacle_shadowParams = [ShadowParams(manual_obstacle,origin=enemy_base.position,gui_modifier=(1,1))
+										 for manual_obstacle in manual_obstacles]
+
+		self.obstacleShadows = manual_obstacle_shadowParams;
 
     def doKeyDown(self, key):
         MOBAWorld.doKeyDown(self, key)
         if key == K_e: #'b'
             if isinstance(self.agent, PlayerHero):
                 self.agent.bark()
+		return None
+
+	def getCoverNodes(self):
+		###################### Our Code Here
+		all_bases = self.getBases()
+		enemy_base_index = numpy.argmax([base.position[0] for base in all_bases])
+		enemy_base = all_bases[enemy_base_index]
+
+		cover_nodes = []
+		for shadow in self.obstacleShadows:
+			preliminary_point_polar = (shadow[0] + 200,shadow[2]+(shadow[1]-shadow[2]/2))
+			search_radius = 200
+			point_found = False
+			iteration_counter = 0
+			while not point_found and iteration_counter < 100:
+				test_r = numpy.random.randint(preliminary_point_polar[0] - search_radius,high = preliminary_point_polar[0] + search_radius)
+				test_theta = 0.5*(numpy.random.random() - 0.5)*(shadow[1]-shadow[2]/2) + preliminary_point_polar[1]
+
+				test_cartesian = Polar2Cartesian_transformPoint((test_r,test_theta),enemy_base.position,gui_modifier=(1,1))
+
+				if (roomForFormation(test_cartesian,self)):
+					point_found = True
+					cover_nodes.append(test_cartesian)
+				iteration_counter +=1;
+		self.obstacleCoverNodes = cover_nodes
+
+		return None
 
 #############################################
 
@@ -337,6 +383,7 @@ def makeNode(type, agent, *args):
 ### YOUR STATES AND BEHAVIORS GO HERE
 
 class LeftSideDaemon(BTNode):
+
     ### percentage: percentage of hitpoints that must have been lost to fail the daemon check
 
     def parseArgs(self, args):

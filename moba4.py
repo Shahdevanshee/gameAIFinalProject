@@ -541,7 +541,10 @@ class MOBAWorld(GatedWorld):
         self.bases = []
         self.towers = []
         self.score = {}
-    
+        self.obstacleShadows = []
+        self.obstacleCoverNodes = []
+
+
     def addBase(self, base):
         self.bases.append(base)
         if self.sprites is not None:
@@ -619,11 +622,10 @@ class MOBAWorld(GatedWorld):
 
     def doKeyDown(self, key):
         GatedWorld.doKeyDown(self, key)
-        keys=pygame.key.get_pressed()
-        if keys[K_LSHIFT]:
+        if key == 106: #'j'
             if isinstance(self.agent, Hero):
                 self.agent.dodge()
-        if keys[K_SPACE]:
+        elif key == 97: #'a'
             if isinstance(self.agent, Hero):
                 self.agent.areaEffect()
 
