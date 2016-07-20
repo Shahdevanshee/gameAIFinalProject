@@ -76,6 +76,7 @@ class MOBAWorld2(MOBAWorld):
 					point_found = True
 					cover_nodes.append(test_cartesian)
 				iteration_counter +=1;
+		self.obstacleCoverNodes = cover_nodes
 
 		return None
 	def doKeyDown(self, key):
