@@ -207,4 +207,16 @@ for loc in weenies:
 	world.addNPC(w)
 	w.start()
 
+
+#region World Modifiers
+#################################################
+# This is the shadows and cover node entry point#
+#################################################
+world.getBaseShadows()
+world.getCoverNodes()
+#################################################
+# This is the shadows and cover node entry point#
+#################################################
+#endregion World Modifiers
+
 world.run()
