@@ -1100,7 +1100,7 @@ class HeroPresentDaemon(BTNode):
         return ret
 
 
-## Retreat to nearest ally
+## Retreat to Healer
 class TacticalRetreat(BTNode):
     
     def parseArgs(self, args):
@@ -1116,15 +1116,9 @@ class TacticalRetreat(BTNode):
         self.timer = 50
         allies = self.agent.world.getNPCsForTeam(self.agent.getTeam())
         if len(allies) > 0:
-            best = None
-            dist = 0
             for a in allies:
-                if isinstance(a, Minion):
-                    d = distance(self.agent.getLocation(), a.getLocation())
-                    if best == None or d < dist:
-                        best = a
-                        dist = d
-            self.target = best
+                if isinstance(a, Healer):
+                    self.target = a.getLocation()
         if self.target is not None:
             navTarget = self.chooseNavigationTarget()
             if navTarget is not None:
