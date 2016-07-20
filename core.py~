@@ -28,7 +28,27 @@ from utils import *
 corerandom = random.Random()
 
 
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ###########################
 ### Thing
 
@@ -95,6 +115,9 @@ class Mover(pygame.sprite.Sprite, Thing):
             if not (insideObstacle(p1, self.world.obstacles) or insideObstacle(p2, self.world.obstacles) or insideObstacle(p3, self.world.obstacles) or insideObstacle(p4, self.world.obstacles)):
                 self.position = tuple(map(lambda c, v: c + v, self.position, offset))
                 self.rect.center = self.position
+            else:
+                if isinstance(self, Agent):
+                    self.stopMoving()
         else:
             self.position = tuple(map(lambda c, v: c + v, self.position, offset))
             self.rect.center = self.position

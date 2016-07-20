@@ -116,7 +116,11 @@ class Mover(pygame.sprite.Sprite, Thing):
                 self.position = tuple(map(lambda c, v: c + v, self.position, offset))
                 self.rect.center = self.position
             else:
-                self.stopMoving()
+                if isinstance(self, Agent):
+                    self.stopMoving()
+                else:
+                    self.position = tuple(map(lambda c, v: c + v, self.position, offset))
+                    self.rect.center = self.position
         else:
             self.position = tuple(map(lambda c, v: c + v, self.position, offset))
             self.rect.center = self.position
