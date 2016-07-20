@@ -112,14 +112,15 @@ class PlayerHero(Hero, Barker):
                  areaeffectdamage=AREAEFFECTDAMAGE):
         Hero.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate, bulletclass,
                       dodgerate, areaeffectrate, areaeffectdamage)
-
     def die(self):
-        Hero.die(self)
-        mybase = self.world.getBaseForTeam(self.getTeam())
-        offset = (mybase.getLocation()[0] - self.getLocation()[0],
-                  mybase.getLocation()[1] - self.getLocation()[1])
-        self.move(offset)
-        self.level = 0
+        return None
+    # def die(self):
+    #     Hero.die(self)
+    #     mybase = self.world.getBaseForTeam(self.getTeam())
+    #     offset = (mybase.getLocation()[0] - self.getLocation()[0],
+    #               mybase.getLocation()[1] - self.getLocation()[1])
+    #     self.move(offset)
+    #     self.level = 0
 
     def bark(self):
         Barker.bark(self)
