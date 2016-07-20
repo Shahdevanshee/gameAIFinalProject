@@ -157,7 +157,6 @@ class Mover(pygame.sprite.Sprite, Thing):
     def collision(self, thing):
         Thing.collision(self, thing)
 #        print "collision", self, thing
-        return None
         
     # Get the object's (x, y) location
     def getLocation(self):

@@ -55,7 +55,7 @@ class MOBAWorld2(MOBAWorld):
 
     def doKeyDown(self, key):
         MOBAWorld.doKeyDown(self, key)
-        if key == K_e:  # 'b'
+        if key == K_e:  # 'e'
             if isinstance(self.agent, PlayerHero):
                 self.agent.bark()
         return None

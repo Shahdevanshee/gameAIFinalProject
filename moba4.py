@@ -622,10 +622,11 @@ class MOBAWorld(GatedWorld):
 
     def doKeyDown(self, key):
         GatedWorld.doKeyDown(self, key)
-        if key == 106: #'j'
+        keys=pygame.key.get_pressed()
+        if keys[K_LSHIFT]:
             if isinstance(self.agent, Hero):
                 self.agent.dodge()
-        elif key == 97: #'a'
+        if keys[K_SPACE]:
             if isinstance(self.agent, Hero):
                 self.agent.areaEffect()
 
