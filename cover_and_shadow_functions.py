@@ -118,8 +118,8 @@ def ShadowParam_pointList(point_list):
     all_thetas = [x[1] for x in point_list]
     theta_avg = np.mean(all_thetas)
 
-    pt1_max_theta = max(point_list,key=lambda x: np.abs(x[1]-theta_avg))
-    pt2_min_theta = min(point_list,key=lambda x: np.abs(pt1_max_theta[1] - x[1]))
+    pt1_max_theta = max(point_list,key=lambda x: x[1])
+    pt2_min_theta = min(point_list,key=lambda x: x[1])
     arrrs = [pt1_max_theta[0],pt2_min_theta[0]]
     rMax = max(arrrs)
     return (rMax,pt1_max_theta[1],pt2_min_theta[1])
