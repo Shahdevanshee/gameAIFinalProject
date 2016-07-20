@@ -47,8 +47,8 @@ class MOBAWorld2(MOBAWorld):
         enemy_base = all_bases[enemy_base_index]
         manual_obstacles = self.getObstacles()
 
-        manual_obstacle_shadowParams = [ShadowParams(manual_obstacle,origin=enemy_base.position,gui_modifier=(1,1))
-                                         for manual_obstacle in manual_obstacles]
+		manual_obstacle_shadowParams = [ShadowParams(manual_obstacle,origin=enemy_base.position,gui_modifier=(1,-1))
+										 for manual_obstacle in manual_obstacles]
 
         self.obstacleShadows = manual_obstacle_shadowParams;
 
@@ -65,26 +65,31 @@ class MOBAWorld2(MOBAWorld):
         enemy_base_index = numpy.argmax([base.position[0] for base in all_bases])
         enemy_base = all_bases[enemy_base_index]
 
-        cover_nodes = []
-        for shadow in self.obstacleShadows:
-            preliminary_point_polar = (shadow[0] + 200,shadow[2]+(shadow[1]-shadow[2]/2))
-            search_radius = 200
-            point_found = False
-            iteration_counter = 0
-            while not point_found and iteration_counter < 100:
-                test_r = numpy.random.randint(preliminary_point_polar[0] - search_radius,high = preliminary_point_polar[0] + search_radius)
-                test_theta = 0.5*(numpy.random.random() - 0.5)*(shadow[1]-shadow[2]/2) + preliminary_point_polar[1]
-
-                test_cartesian = Polar2Cartesian_transformPoint((test_r,test_theta),enemy_base.position,gui_modifier=(1,1))
-
-                if (roomForFormation(test_cartesian,self)):
-                    point_found = True
-                    cover_nodes.append(test_cartesian)
-                iteration_counter +=1;
-        self.obstacleCoverNodes = cover_nodes
+		cover_nodes = []
+		for shadow in self.obstacleShadows:
+			cover_nodes.append(GamePoint_From_RelativePolarCoordinate((shadow[0],shadow[1]),enemy_base.position))
+			# preliminary_point_polar = (shadow[0] + 200,shadow[2]+(shadow[1]-shadow[2]/2))
+			# search_radius = 200
+			# point_found = False
+			# iteration_counter = 0
+			# while not point_found and iteration_counter < 100:
+			# 	test_r = numpy.random.randint(preliminary_point_polar[0] - search_radius,high = preliminary_point_polar[0] + search_radius)
+			# 	test_theta = 0.5*(numpy.random.random() - 0.5)*(shadow[1]-shadow[2]/2) + preliminary_point_polar[1]
+            #
+				# test_cartesian = GamePoint_From_RelativePolarCoordinate((test_r,test_theta),enemy_base.position)
+                #
+                # if (roomForFormation(test_cartesian,self)):
+					# point_found = True
+					# cover_nodes.append(test_cartesian)
+				# iteration_counter +=1;
+		self.obstacleCoverNodes = cover_nodes
 
         return None
-
+	def update(self, delta):
+		MOBAWorld.update(self,delta)
+		for point in self.obstacleCoverNodes:
+			drawCross(self.background,point,color=(0,255,0),size=15,width=4)
+			drawCross(self.background,(100,100),color=(0,255,0))
 #############################################
 
 class Barker():
