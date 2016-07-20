@@ -541,7 +541,10 @@ class MOBAWorld(GatedWorld):
 		self.bases = []
 		self.towers = []
 		self.score = {}
-	
+		self.obstacleShadows = []
+		self.obstacleCoverNodes = []
+
+
 	def addBase(self, base):
 		self.bases.append(base)
 		if self.sprites is not None:
