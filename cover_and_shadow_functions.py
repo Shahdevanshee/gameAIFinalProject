@@ -137,8 +137,8 @@ def ShadowParams(item,origin=(0,0),gui_modifier=(1,-1)):
 
 
 
-# game_origin = (2500.0,700.0)
-# obstacle_1 = [(1230,1400),(1330,1400),(1330,775),(1230,775)]
+game_origin = (2500.0,700.0)
+obstacle_1 = [(1230,1400),(1330,1400),(1330,775),(1230,775)]
 
 
 # Test 1: Point To polar, from 0,0
@@ -159,31 +159,31 @@ def ShadowParams(item,origin=(0,0),gui_modifier=(1,-1)):
 ### Generate Polar Coordinate
 
 # Convert Origin
-# o_hat = CoordinateSystemTransform_Point(game_origin,gui_modifier=(1,-1))
+o_hat = CoordinateSystemTransform_Point(game_origin,gui_modifier=(1,-1))
 # Convert Incoming Point
-# p_hat = CoordinateSystemTransform_Point(obstacle_1[0],gui_modifier=(1,-1))
+p_hat = CoordinateSystemTransform_Point(obstacle_1[0],gui_modifier=(1,-1))
 # Translate Incoming Point to new Origin
-# p_prime = TranslateTo_Point(p_hat,o_hat)
+p_prime = TranslateTo_Point(p_hat,o_hat)
 # Cartesian To Polar
-# p_polar = Cartesian2Polar_transformPoint(p_prime)
+p_polar = Cartesian2Polar_transformPoint(p_prime)
 
 
-# p_polar2 = GamePoint_2_RelativePolarCoordinate(obstacle_1[0],game_origin)
+p_polar2 = GamePoint_2_RelativePolarCoordinate(obstacle_1[0],game_origin)
 
 
 ### Convert Back to Cartesian
 
 # Polar to Cartesian
-# p_cartesian = Polar2Cartesian_transformPoint(p_polar)
+p_cartesian = Polar2Cartesian_transformPoint(p_polar)
 # Convert Origin
-# o_hat2 = CoordinateSystemTransform_Point(game_origin,gui_modifier=(1,-1))
+o_hat2 = CoordinateSystemTransform_Point(game_origin,gui_modifier=(1,-1))
 # Translate Point FROM origin
-# p_c2 = TranslateFrom_Point(p_cartesian,o_hat2)
+p_c2 = TranslateFrom_Point(p_cartesian,o_hat2)
 # Convert Point
-# p_final = CoordinateSystemTransform_Point(p_c2,gui_modifier=(1,-1))
+p_final = CoordinateSystemTransform_Point(p_c2,gui_modifier=(1,-1))
 
-# p_final2 = GamePoint_From_RelativePolarCoordinate(p_polar2,game_origin,gui_modifier=(1,-1))
+p_final2 = GamePoint_From_RelativePolarCoordinate(p_polar2,game_origin,gui_modifier=(1,-1))
 
-# x = 1
+x = 1
 
 
