@@ -1205,7 +1205,7 @@ class HealRetreat(BTNode):
         else:
             return None
 
-## Retreat to Healer
+## Retreat to Player
 class PlayerRetreat(BTNode):
     def parseArgs(self, args):
         BTNode.parseArgs(self, args)
