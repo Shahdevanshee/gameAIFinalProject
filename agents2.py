@@ -136,15 +136,6 @@ class PlayerHero(Hero, Barker):
         ### Set thebark to whatever is the contextually relevant thing (probably a string)
         ### YOUR CODE GOES BELOW HERE ###
 
-        '''
-        Rules:
-        Automatic: If enemies in range, heros attack, healer hides/heals
-                    If pc far away, go to formation
-                    If pc health low, healer heals, heros go to
-
-        Barked: If Hero in cover, go to cover
-
-        '''
 
         ### YOUR CODE GOES ABOVE HERE ###
         for n in self.world.getNPCsForTeam(self.getTeam()):
@@ -650,7 +641,7 @@ class Taunt(BTNode):
     def execute(self, delta=0):
         ret = BTNode.execute(self, delta)
         if self.target is not None:
-            print "Hey", self.target, "I don't like you!"
+            print "Hey", self.target, "Fuck Off!"
         return ret
 
 
@@ -1167,7 +1158,7 @@ class HeroPresentDaemon(BTNode):
 
 
 ## Retreat to Healer
-class TacticalRetreat(BTNode):
+class HealRetreat(BTNode):
     def parseArgs(self, args):
         BTNode.parseArgs(self, args)
         self.target = None
@@ -1183,6 +1174,54 @@ class TacticalRetreat(BTNode):
         if len(allies) > 0:
             for a in allies:
                 if isinstance(a, Healer):
+                    self.target = a.getLocation()
+        if self.target is not None:
+            navTarget = self.chooseNavigationTarget()
+            if navTarget is not None:
+                self.agent.navigateTo(navTarget)
+
+    def execute(self, delta=0):
+        ret = BTNode.execute(self, delta)
+        if self.target == None or self.target.isAlive() == False:
+            # failed execution conditions
+            print "exec", self.id, "false"
+            return False
+        elif distance(self.agent.getLocation(), self.target.getLocation()) < self.agent.getMaxRadius():
+            # succeeded
+            print "exec", self.id, "true"
+            return True
+        else:
+            # executing
+            self.timer = self.timer - 1
+            if self.timer <= 0:
+                self.timer = 50
+                self.reset()
+            return None
+        return ret
+
+    def chooseNavigationTarget(self):
+        if self.target is not None:
+            return self.target.getLocation()
+        else:
+            return None
+
+## Retreat to Player
+class PlayerRetreat(BTNode):
+    def parseArgs(self, args):
+        BTNode.parseArgs(self, args)
+        self.target = None
+        self.timer = 50
+        # First argument is the node ID
+        if len(args) > 0:
+            self.id = args[0]
+
+    def enter(self):
+        BTNode.enter(self)
+        self.timer = 50
+        allies = self.agent.world.getNPCsForTeam(self.agent.getTeam())
+        if len(allies) > 0:
+            for a in allies:
+                if isinstance(a, PlayerHero):
                     self.target = a.getLocation()
         if self.target is not None:
             navTarget = self.chooseNavigationTarget()

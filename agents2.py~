@@ -55,7 +55,7 @@ class MOBAWorld2(MOBAWorld):
 
     def doKeyDown(self, key):
         MOBAWorld.doKeyDown(self, key)
-        if key == K_e:  # 'b'
+        if key == K_e:  # 'e'
             if isinstance(self.agent, PlayerHero):
                 self.agent.bark()
         return None
@@ -68,28 +68,36 @@ class MOBAWorld2(MOBAWorld):
         enemy_base = all_bases[enemy_base_index]
 
         cover_nodes = []
+        shadow_nodes = []
         for shadow in self.obstacleShadows:
-            cover_nodes.append(GamePoint_From_RelativePolarCoordinate((shadow[0], shadow[1]), enemy_base.position))
-            # preliminary_point_polar = (shadow[0] + 200,shadow[2]+(shadow[1]-shadow[2]/2))
-            # search_radius = 200
-            # point_found = False
-            # iteration_counter = 0
-            # while not point_found and iteration_counter < 100:
-            # 	test_r = numpy.random.randint(preliminary_point_polar[0] - search_radius,high = preliminary_point_polar[0] + search_radius)
-            # 	test_theta = 0.5*(numpy.random.random() - 0.5)*(shadow[1]-shadow[2]/2) + preliminary_point_polar[1]
-            #
-            # test_cartesian = GamePoint_From_RelativePolarCoordinate((test_r,test_theta),enemy_base.position)
-            #
-            # if (roomForFormation(test_cartesian,self)):
-            # point_found = True
-            # cover_nodes.append(test_cartesian)
-            # iteration_counter +=1;
-        self.obstacleCoverNodes = cover_nodes
+            shadow_nodes.append(GamePoint_From_RelativePolarCoordinate((shadow[0], shadow[1]), enemy_base.position))
+            shadow_nodes.append(GamePoint_From_RelativePolarCoordinate((shadow[0], shadow[2]), enemy_base.position))
 
+
+            avg_theta = (shadow[1] + shadow[2])/2
+            diff = np.abs(shadow[1]-avg_theta)/2
+
+            high_theta = avg_theta + diff
+            low_theta = avg_theta - diff
+
+            point_counter = 0
+            while point_counter < 10:
+                r = np.random.randint(shadow[0]+50,shadow[0]+100)
+                theta_new = (np.random.random()-0.5)*diff + low_theta
+
+                test_cartesian = GamePoint_From_RelativePolarCoordinate((r,theta_new),enemy_base.position)
+
+                cover_nodes.append(test_cartesian)
+                point_counter+=1
+
+        self.obstacleCoverNodes = cover_nodes
+        self.shadowParameterNodes = shadow_nodes
 
     def update(self, delta):
         MOBAWorld.update(self, delta)
         for point in self.obstacleCoverNodes:
+            drawCross(self.background, point, color=(0,0,255),size=6,width=2)
+        for point in self.shadowParameterNodes:
             drawCross(self.background, point, color=(0, 255, 0), size=15, width=4)
             drawCross(self.background, (100, 100), color=(0, 255, 0))
 
@@ -128,15 +136,6 @@ class PlayerHero(Hero, Barker):
         ### Set thebark to whatever is the contextually relevant thing (probably a string)
         ### YOUR CODE GOES BELOW HERE ###
 
-        '''
-        Rules:
-        Automatic: If enemies in range, heros attack, healer hides/heals
-                    If pc far away, go to formation
-                    If pc health low, healer heals, heros go to
-
-        Barked: If Hero in cover, go to cover
-
-        '''
 
         ### YOUR CODE GOES ABOVE HERE ###
         for n in self.world.getNPCsForTeam(self.getTeam()):
@@ -642,7 +641,7 @@ class Taunt(BTNode):
     def execute(self, delta=0):
         ret = BTNode.execute(self, delta)
         if self.target is not None:
-            print "Hey", self.target, "I don't like you!"
+            print "Hey", self.target, "Fuck Off!"
         return ret
 
 
@@ -1159,7 +1158,7 @@ class HeroPresentDaemon(BTNode):
 
 
 ## Retreat to Healer
-class TacticalRetreat(BTNode):
+class HealRetreat(BTNode):
     def parseArgs(self, args):
         BTNode.parseArgs(self, args)
         self.target = None
@@ -1175,6 +1174,54 @@ class TacticalRetreat(BTNode):
         if len(allies) > 0:
             for a in allies:
                 if isinstance(a, Healer):
+                    self.target = a.getLocation()
+        if self.target is not None:
+            navTarget = self.chooseNavigationTarget()
+            if navTarget is not None:
+                self.agent.navigateTo(navTarget)
+
+    def execute(self, delta=0):
+        ret = BTNode.execute(self, delta)
+        if self.target == None or self.target.isAlive() == False:
+            # failed execution conditions
+            print "exec", self.id, "false"
+            return False
+        elif distance(self.agent.getLocation(), self.target.getLocation()) < self.agent.getMaxRadius():
+            # succeeded
+            print "exec", self.id, "true"
+            return True
+        else:
+            # executing
+            self.timer = self.timer - 1
+            if self.timer <= 0:
+                self.timer = 50
+                self.reset()
+            return None
+        return ret
+
+    def chooseNavigationTarget(self):
+        if self.target is not None:
+            return self.target.getLocation()
+        else:
+            return None
+
+## Retreat to Healer
+class PlayerRetreat(BTNode):
+    def parseArgs(self, args):
+        BTNode.parseArgs(self, args)
+        self.target = None
+        self.timer = 50
+        # First argument is the node ID
+        if len(args) > 0:
+            self.id = args[0]
+
+    def enter(self):
+        BTNode.enter(self)
+        self.timer = 50
+        allies = self.agent.world.getNPCsForTeam(self.agent.getTeam())
+        if len(allies) > 0:
+            for a in allies:
+                if isinstance(a, PlayerHero):
                     self.target = a.getLocation()
         if self.target is not None:
             navTarget = self.chooseNavigationTarget()
