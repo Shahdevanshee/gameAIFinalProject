@@ -154,6 +154,11 @@ class Healer(MOBAAgent, Barker):
         self.healRate = healrate
         self.healTimer = 0
         self.canHeal = True
+        self.minionTarget = None
+        self.minionTargetLocation = None
+        self.myHero = None
+
+        self.getHero()
 
     def die(self):
         MOBAAgent.die(self)
@@ -191,6 +196,14 @@ class Healer(MOBAAgent, Barker):
             return True
         return False
 
+    def getHero(self):
+        npc_list = self.world.getNPCsForTeam(self.getTeam())
+        hero = None
+        for npc in npc_list:
+            if isinstance(i, PlayerHero):
+                self.myHero = npc
+                return None
+        return None
 
 ###################################################
 ### MyHealer
@@ -287,7 +300,7 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
 
     def start(self):
         # Build the tree
-        spec = healerTreeSpec(self)
+        spec = companionTreeSpec(self)
         tree = myCompanionBuildTree(self)
         if spec is not None and (isinstance(spec, list) or isinstance(spec, tuple)):
             self.buildTree(spec)
@@ -341,19 +354,19 @@ def healerTreeSpec(agent):
     spec = None
     ### YOUR CODE GOES BELOW HERE ###
     # spec = [Selector, [HealthDaemon, HealCompanion],[LeftSideDaemon, Formation], TacticalCover]
-    spec = [Selector, [LeftSideDaemon, Formation]]  # , TacticalCover]
+    # spec = [Selector, [LeftSideDaemon, Formation]]  # , TacticalCover]
     # LANSSIE STUFF
-
-    # spec = [(Selector, 'staring the healer'),
-    #             [(HealerDaemon, agent.canHeal, 'can the healer heal yet'),
-    #                 [(Sequence, 'healing team'), (HealClosestTeammate, 'Healing Teammate')]
-    #             ],
-    #             [(Formation, 'doing regular formation')]
-    #         ]
-    # spec = [(Selector, 'staring the healer'),
-    #             [(HealClosestTeammate, 'Healing Teammate'),
-    #             (Formation, 'doing regular formation')]
-    #         ]
+    hero = self.getHero(self.agent.world.getNPCsForTeam(self.agent.getTeam()))
+    # area of affect?
+    spec = [(Selector, 'starting the healer'),
+                [(HealerBarkDaemon, playerHealth, distance_helaer_to_player, barkorder,'heard bark order'), #dogde
+                    [(Sequence, 'finding and healing hero sequence'), (FindTeammate, agent.myHero, 'finding hero'), (HealTeammate, agent.myHero, 'Healing Hero')]
+                ],
+                [(HealTeammateDaemon, 'regular healing'), #dodge
+                    [(Sequence, 'finding and healing teammate sequence'),(FindTeammate, agent.minionTarget, 'finding hero'), (HealTeammate, agent.minionTarget, 'Healing Hero')],
+                ],
+                (Formation, 'doing regular formation')
+            ]
     ### YOUR CODE GOES ABOVE HERE ###
     return spec
 
@@ -482,41 +495,105 @@ class Formation(BTNode):
 
 # LANSSIE HEALER THINGS
 # FINDING COVER AS THE DEFAULT STATE OF BEING FOR HEALERS AND POSSIBLY OTHER MINIONS?
-class FindCover(BTNode):
+
+# DAEMONS GALORE
+
+class HealerBarkDaemon(BTNode):
+
     def parseArgs(self, args):
         BTNode.parseArgs(self, args)
         self.target = None
         self.timer = 50
         # First argument is the factor
         if len(args) > 0:
-            self.percentage = args[0]
+            self.playerHealth = args[0]
         # Second argument is the node ID
         if len(args) > 1:
-            self.id = args[1]
+            self.healerDistanceToPlayer = args[1]
+        if len(args) > 2:
+            self.bark = args[2]
+        if len(args) > 3:
+            self.id = args[3]        
 
-    def enter(self):
-        BTNode.enter(self)
-        # temporary go to base, but should go to nearest obstacle cover area
-        self.agent.navigateTo(self.agent.world.getBaseForTeam(self.agent.getTeam()).getLocation())
-
-    def execute(self):
+    def execute(self, delta=0):
         ret = BTNode.execute(self, delta)
-        # if self.agent.getHitpoints() > self.agent.getMaxHitpoints():
-        #     # fail executability conditions
-        #     print "exec", self.id, "false"
-        #     return False
-        # elif self.agent.getHitpoints() == self.agent.getMaxHitpoints():
-        #     # Exection succeeds
-        #     print "exec", self.id, "true"
-        #     print 'IM GOING TO RETREAT'
-        #     return True
-        # else:
-        #     # executing
-        #     return None
+        if self.playerHealth < .5 * HEROHITPOINTS and self.healerDistanceToPlayer < 150 and self.bark == True: 
+            return self.getChild(0).execute(delta)
+        else:
+            return False
         return ret
 
+class HealTeammateDaemon(BTNode):
+    ### HEALS IF WE CAN
 
-class HealClosestTeammate(BTNode):
+    def parseArgs(self, args):
+        BTNode.parseArgs(self, args)
+        self.advantage = 0
+        # First argument is the advantage
+        if len(args) > 0:
+            self.id = args[0]
+
+    def execute(self, delta=0):
+        ret = BTNode.execute(self, delta)
+        hero = None
+        # Get a reference to the enemy hero
+        team = self.agent.world.getNPCsForTeam(self.agent.getTeam())
+        print team 
+
+        to_heal = None
+        distance_away = []
+        i = 0
+        for teammate in team:
+            distance_away[i] = distance(teammate.getLocation(), self.agent.getLocation())
+            i += 1
+        to_heal = team[distance_away.index(min(distance_away))]
+        far_away = min(distance_away)
+
+        if to_heal != None and to_heal.isAlive() and far_away < 150 and to_heal. to_heal.getHitpoints() < .5*to_heal.getMaxHitpoints():
+            self.agent.minionTarget = to_heal
+            self.agent.minionTargetLocation = to_heal.getLocation()
+            return self.getChild(0).execute(delta)
+        else:
+            return False
+        return ret
+
+# REGULAR MF BAEHAVIORS
+
+# class FindCover(BTNode):
+#     def parseArgs(self, args):
+#         BTNode.parseArgs(self, args)
+#         self.target = None
+#         self.timer = 50
+#         # First argument is the factor
+#         if len(args) > 0:
+#             self.percentage = args[0]
+#         # Second argument is the node ID
+#         if len(args) > 1:
+#             self.id = args[1]
+
+#     def enter(self):
+#         BTNode.enter(self)
+#         # temporary go to base, but should go to nearest obstacle cover area
+#         self.agent.navigateTo(self.agent.world.getBaseForTeam(self.agent.getTeam()).getLocation())
+
+#     def execute(self):
+#         ret = BTNode.execute(self, delta)
+#         # if self.agent.getHitpoints() > self.agent.getMaxHitpoints():
+#         #     # fail executability conditions
+#         #     print "exec", self.id, "false"
+#         #     return False
+#         # elif self.agent.getHitpoints() == self.agent.getMaxHitpoints():
+#         #     # Exection succeeds
+#         #     print "exec", self.id, "true"
+#         #     print 'IM GOING TO RETREAT'
+#         #     return True
+#         # else:
+#         #     # executing
+#         #     return None
+#         return ret
+
+
+class HealTeammate(BTNode):
     ### target: the minion to chase
     ### timer: how often to replan
 
@@ -526,22 +603,55 @@ class HealClosestTeammate(BTNode):
         self.timer = 50
         # First argument is the node ID
         if len(args) > 0:
-            self.id = args[0]
+            self.target = args[0]
+        if len(args) > 1:
+            self.id = args[1]
+
+    def enter(self):
+        
+
+    def execute(self, delta=0):
+        ret = BTNode.execute(self, delta)
+        if self.target == None or self.target.isAlive() == False:
+            # failed execution conditions
+            print "exec", self.id, "false"
+            return False
+        else:
+            self.agent.heal(self.target)
+            # return True
+        return ret
+
+
+
+##################
+### FINDTEAMMATE
+###
+### Find the closest minion and move to intercept it.
+### Parameters:
+###   0: node ID string (optional)
+
+
+class FindTeammate(BTNode):
+    ### target: the minion to chase
+    ### timer: how often to replan
+
+    def parseArgs(self, args):
+        BTNode.parseArgs(self, args)
+        self.target = None
+        self.timer = 50
+        # First argument is the node ID
+        if len(args) > 0:
+            self.hero = args[0]
+        if len(args) > 1:
+            self.id = args[1]
 
     def enter(self):
         BTNode.enter(self)
         self.timer = 50
-        team = self.agent.world.getNPCsForTeam(self.agent.getTeam())
-        if len(team) > 0:
-            best = None
-            HP = 0
-            for e in team:
-                if isinstance(e, Minion):
-                    hp = e.getHitpoints()
-                    if best == None or HP > hp:
-                        best = e
-                        HP = hp
-            self.target = best
+        if self.hero != self.agent.minionTarget: #should expect a hero if from other branch. should expect minion if passed through the daemon successfully.
+            self.target = self.hero
+        else:
+            self.target = self.agent.minionTarget
         if self.target is not None:
             navTarget = self.chooseNavigationTarget()
             if navTarget is not None:
@@ -553,11 +663,10 @@ class HealClosestTeammate(BTNode):
             # failed execution conditions
             print "exec", self.id, "false"
             return False
-        # elif distance(self.agent.getLocation(), self.target.getLocation()) < BIGBULLETRANGE:
-        #     # succeeded
-        #     print 'IM FINDING TEAM NOW'
-        #     print "exec", self.id, "true"
-        #     return True
+        elif distance(self.agent.getLocation(), self.target.getLocation()) < 1:
+            # succeeded
+            print "exec", self.id, "true"
+            return True
         else:
             # executing
             self.timer = self.timer - 1
@@ -574,35 +683,6 @@ class HealClosestTeammate(BTNode):
             return self.target.getLocation()
         else:
             return None
-
-
-class HealerDaemon(BTNode):
-    ### HEALS IF WE CAN
-
-    def parseArgs(self, args):
-        BTNode.parseArgs(self, args)
-        self.advantage = 0
-        # First argument is the advantage
-        if len(args) > 0:
-            self.bool_heal = args[0]
-        if len(args) > 1:
-            self.id = args[1]
-
-    def execute(self, delta=0):
-        ret = BTNode.execute(self, delta)
-        hero = None
-        # Get a reference to the enemy hero
-        enemies = self.agent.world.getEnemyNPCs(self.agent.getTeam())
-
-        if self.bool_heal:
-            return self.getChild(0).execute(delta)
-        else:
-            # check if timer is < time it takes to get to the player?
-            return False
-            # Check didn't fail, return child's status
-            # return self.getChild(0).execute(delta)
-        return ret
-
 
 ###############################
 ### BEHAVIOR CLASSES FROM IAN:
