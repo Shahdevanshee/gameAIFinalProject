@@ -103,16 +103,48 @@ class MOBAWorld2(MOBAWorld):
 
 
 #############################################
+def BarkContext(Mover):
+    barkState = {}
+    healer_values = {}
+    minion_1_values = {}
+    minion_2_values = {}
+    ###########################################################
+
+    # desired values:
+    #     - relative distance to [Healer,Minion1,Minion2,Hero]
+    #     - distance to nearest cover point
+    #     - health [Healer,Minion1,Minion2,Hero]
+
+
+
+
+
+
+
+
+
+
+
+    barkState[0] = healer_values
+    barkState[1] = minion_1_values
+    barkState[2] = minion_2_values
+    ###########################################################
+    return barkState
 
 class Barker():
+    def __init__(self):
+        self.barkState = None
     def bark(self):
+        self.barkState = BarkContext(self)
         pass
 
     def hearBark(self, thebark):
+        self.barkState = thebark
         pass
 
 
 ############################################
+
 
 class PlayerHero(Hero, Barker):
     def __init__(self, position, orientation, world, image=AGENT, speed=SPEED, viewangle=360, hitpoints=HEROHITPOINTS,
@@ -135,8 +167,7 @@ class PlayerHero(Hero, Barker):
         thebark = None
         ### Set thebark to whatever is the contextually relevant thing (probably a string)
         ### YOUR CODE GOES BELOW HERE ###
-
-
+        thebark = BarkContext(self)
         ### YOUR CODE GOES ABOVE HERE ###
         for n in self.world.getNPCsForTeam(self.getTeam()):
             if isinstance(n, Barker):
@@ -218,7 +249,6 @@ class MyHealer(Healer, BehaviorTree):
         self.startState = None
         ### YOUR CODE GOES BELOW HERE ###
         self.team = self.getTeam()
-
         ### YOUR CODE GOES ABOVE HERE ###
 
     def update(self, delta):
@@ -243,21 +273,31 @@ class MyHealer(Healer, BehaviorTree):
         Healer.stop(self)
         BehaviorTree.stop(self)
 
+    def calculateBarkString(self):
+        print "Companion Minion Barking!!!"
+        return None
+
     def bark(self):
         Barker.bark(self)
         ### YOUR CODE GOES BELOW HERE
-
+        self.calculateBarkString()
         ### YOUR CODE GOES ABOVE HERE
-
+    def calculateHeardBarkString(self):
+        print "Companion Minion Heard Bark!!!"
+        return None
     def hearBark(self, thebark):
         Barker.hearBark(self, thebark)
         ### YOUR CODE GOES BELOW HERE ###
+        self.calculateHeardBarkString()
+
+        #region Below to be handled in behavior tree
         # pause beavhior tree?
-        self.stop()
+        #self.stop()
         # only goes to heal the healer if he barks at us
-        hero = self.world.agent
-        self.navigateTo(hero.getLocation())
-        self.heal(hero)
+        #hero = self.world.agent
+        #self.navigateTo(hero.getLocation())
+        #self.heal(hero)
+        #endregion
         ### YOUR CODE GOES ABOVE HERE ###
 
 
@@ -288,10 +328,15 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
 
         ### YOUR CODE GOES ABOVE HERE ###
 
+
+    def calculateBarkString(self):
+        print "Companion Minion Barking!!!"
+        return None
+
     def bark(self):
         Barker.bark(self)
         ### YOUR CODE GOES BELOW HERE
-
+        self.calculateBarkString()
         ### YOUR CODE GOES ABOVE HERE
 
     def update(self, delta):
@@ -316,16 +361,26 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
         Hero.stop(self)
         BehaviorTree.stop(self)
 
+    def calculateBarkString(self):
+        print "Companion Minion Barking!!!"
+        return None
+
     def bark(self):
         Barker.bark(self)
         ### YOUR CODE GOES BELOW HERE
-
+        self.calculateBarkString()
         ### YOUR CODE GOES ABOVE HERE
+
+
+    def calculateHeardBarkString(self):
+        print "Companion Minion Heard Bark!!!"
+        return None
 
     def hearBark(self, thebark):
         Barker.hearBark(self, thebark)
-        ### YOUR CODE GOES BELOW HERE
-        ### YOUR CODE GOES ABOVE HERE
+        ### YOUR CODE GOES BELOW HERE ###
+        self.calculateHeardBarkString()
+        ### YOUR CODE GOES ABOVE HERE ###
 
 
 ##########################################################
