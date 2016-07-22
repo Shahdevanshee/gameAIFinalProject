@@ -358,14 +358,14 @@ def healerTreeSpec(agent):
     # LANSSIE STUFF
     hero = self.getHero(self.agent.world.getNPCsForTeam(self.agent.getTeam()))
     # area of affect?
-    # spec = [(Selector, 'starting the healer'),
-    #             [(HealerBarkDaemon, playerHealth, distance_helaer_to_player, barkorder,'heard bark order'), #dogde
-    #                 [(Sequence, 'finding and healing hero sequence'), (FindTeammate, agent.myHero, 'finding hero'), (HealTeammate, agent.myHero, 'Healing Hero')]
-    #             ],
-    #             [(HealTeammateDaemon, 'regular healing'), #dodge
-    #                 [(Sequence, 'finding and healing teammate sequence'),(FindTeammate, agent.minionTarget, 'finding hero'), (HealTeammate, agent.minionTarget, 'Healing Hero')],
-    #             ],
-    #             (Formation, 'doing regular formation')
+    spec = [(Selector, 'starting the healer'),
+                [(HealerBarkDaemon, playerHealth, distance_helaer_to_player, barkorder,'heard bark order'), #dogde
+                    [(Sequence, 'finding and healing hero sequence'), (FindTeammate, agent.myHero, 'finding hero'), (HealTeammate, agent.myHero, 'Healing Hero')]
+                ],
+                [(HealTeammateDaemon, 'regular healing'), #dodge
+                    [(Sequence, 'finding and healing teammate sequence'),(FindTeammate, agent.minionTarget, 'finding hero'), (HealTeammate, agent.minionTarget, 'Healing Hero')],
+                ],
+                (Formation, 'doing regular formation')
             ]
     ### YOUR CODE GOES ABOVE HERE ###
     return spec
