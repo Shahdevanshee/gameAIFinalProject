@@ -1550,10 +1550,10 @@ class RetreatToPlayer(BTNode):
 def getNearestEnemy(agent, enemy_minions):
     if enemy_minions:
         closest = enemy_minions[0]
-    for enemy in enemy_minions:
-        if distance(agent.getLocation(), enemy.getLocation()) < distance(agent.getLocation(), closest.getLocation()):
-            closest = enemy
-    return closest
+        for enemy in enemy_minions:
+            if distance(agent.getLocation(), enemy.getLocation()) < distance(agent.getLocation(), closest.getLocation()):
+                closest = enemy
+        return closest
 
 
 def getVisibleEnemyType(agent, Class):
