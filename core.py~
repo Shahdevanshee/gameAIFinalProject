@@ -107,6 +107,7 @@ class Mover(pygame.sprite.Sprite, Thing):
         if self.world.obstacles:
             x=offset[0]
             y=offset[1]
+
             p1=(self.rect.topleft[0]+x,self.rect.topleft[1]+y)
             p2=(self.rect.topright[0]+x,self.rect.topleft[1]+y)
             p3=(self.rect.bottomleft[0]+x,self.rect.topleft[1]+y)
@@ -157,7 +158,6 @@ class Mover(pygame.sprite.Sprite, Thing):
     def collision(self, thing):
         Thing.collision(self, thing)
 #        print "collision", self, thing
-        return None
         
     # Get the object's (x, y) location
     def getLocation(self):
@@ -546,9 +546,7 @@ class Navigator():
     
     ### Callback from Agent. Agent has collided with something.
     def collision(self, thing):
-        return None
-        #print "Collision"
-    
+        pass    
     ### This function gets called by the agent to figure out if some shortcutes can be taken when traversing the path.
     ### This function should update the path and return True if the path was updated
     def smooth(self):
@@ -1083,11 +1081,20 @@ class GameWorld():
         p4=(self.agent.rect.bottomright[0]+x,self.agent.rect.topleft[1]+y)
         
         if not (insideObstacle(p1, self.obstacles) or insideObstacle(p2, self.obstacles) or insideObstacle(p3, self.obstacles) or insideObstacle(p4, self.obstacles)):
+            c=1.5*self.agent.getRadius()
             self.agent.move((x,y))
 
+            
             if keys[K_LSHIFT] and not (x==0.0 and y==0.0):
                 angle=math.degrees(numpy.arctan2(x,y))-90.0
-                self.agent.dodge(angle)
+                c=1.5*self.agent.getMaxRadius()
+                vector = (c*math.cos(math.radians(angle)), -c*math.sin(math.radians(angle)))
+                p1=(self.agent.rect.topleft[0]+vector[0],self.agent.rect.topleft[1]+vector[1])
+                p2=(self.agent.rect.topright[0]+vector[0],self.agent.rect.topleft[1]+vector[1])
+                p3=(self.agent.rect.bottomleft[0]+vector[0],self.agent.rect.topleft[1]+vector[1])
+                p4=(self.agent.rect.bottomright[0]+vector[0],self.agent.rect.topleft[1]+vector[1])
+                if not (insideObstacle(p1, self.obstacles) or insideObstacle(p2, self.obstacles) or insideObstacle(p3, self.obstacles) or insideObstacle(p4, self.obstacles)):
+                    self.agent.dodge(angle)
 
         if keys[K_SPACE]:
             self.agent.areaEffect()
