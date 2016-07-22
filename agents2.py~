@@ -136,7 +136,6 @@ class PlayerHero(Hero, Barker):
         ### Set thebark to whatever is the contextually relevant thing (probably a string)
         ### YOUR CODE GOES BELOW HERE ###
 
-
         ### YOUR CODE GOES ABOVE HERE ###
         for n in self.world.getNPCsForTeam(self.getTeam()):
             if isinstance(n, Barker):
@@ -148,12 +147,20 @@ class PlayerHero(Hero, Barker):
 
 class Healer(MOBAAgent, Barker):
     def __init__(self, position, orientation, world, image=GRUNT, speed=SPEED, viewangle=360, hitpoints=HITPOINTS,
-                 firerate=FIRERATE, bulletclass=SmallBullet, healrate=HEALRATE):
+                 firerate=FIRERATE, bulletclass=SmallBullet, healrate=HEALRATE,dodgerate = DODGERATE, areaeffectrate = AREAEFFECTRATE, areaeffectdamage = AREAEFFECTDAMAGE):
         MOBAAgent.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
                            bulletclass)
         self.healRate = healrate
         self.healTimer = 0
         self.canHeal = True
+
+        self.dodgeRate = dodgerate
+        self.dodgeTimer = 0
+        self.candodge = True
+        self.canareaeffectheal = True
+        self.areaEffectRate = areaeffectrate
+        self.areaEffectDamage = areaeffectdamage
+        self.areaEffectTimer = 0
 
     def die(self):
         MOBAAgent.die(self)
@@ -171,6 +178,16 @@ class Healer(MOBAAgent, Barker):
             if self.healTimer >= self.healRate:
                 self.canHeal = True
                 self.healTimer = 0
+        if self.candodge == False:
+            self.dodgeTimer = self.dodgeTimer + 1
+            if self.dodgeTimer >= self.dodgeRate:
+                self.candodge = True
+                self.dodgeTimer = 0
+        if self.canareaeffectheal == False:
+            self.areaEffectTimer = self.areaEffectTimer + 1
+            if self.areaEffectTimer >= self.areaEffectRate:
+                self.canareaeffectheal = True
+                self.areaEffectTimer = 0
 
     def heal(self, agent):
         if self.canHeal:
@@ -180,17 +197,24 @@ class Healer(MOBAAgent, Barker):
                 self.canHeal = False
 
     def areaEffectHeal(self):
-        if self.canareaeffect:
-            self.canareaeffect = False
+        if self.canareaeffectheal:
+            self.canareaeffectheal = False
             pygame.draw.circle(self.world.background, (0, 0, 255),
                                (int(self.getLocation()[0]), int(self.getLocation()[1])), int(self.getRadius() * 2), 1)
-            for x in self.getNPCsForTeam(self.team):
+            for x in self.world.getNPCsForTeam(self.team):
                 if distance(self.getLocation(), x.getLocation()) < (self.getRadius() * AREAEFFECTRANGE) + (
                 x.getRadius()):
                     x.hitpoints += (self.areaEffectDamage)
+            self.hitpoints+=self.areaEffectDamage
             return True
         return False
 
+
+    def canDodge(self):
+        return self.candodge
+
+    def canAreaEffectHeal(self):
+        return self.canareaeffectheal
 
 ###################################################
 ### MyHealer
@@ -215,14 +239,9 @@ class MyHealer(Healer, BehaviorTree):
     def start(self):
         # Build the tree
         spec = healerTreeSpec(self)
-        tree = myHealerBuildTree(self)
         if spec is not None and (isinstance(spec, list) or isinstance(spec, tuple)):
             self.buildTree(spec)
-        elif tree is not None:
-            self.setTree(tree)
-        elif len(self.states) > 0 and self.startState is not None:
-            self.changeState(self.startState)
-        # Start the agent
+            # Start the agent
         Healer.start(self)
         BehaviorTree.start(self)
 
@@ -287,15 +306,10 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
 
     def start(self):
         # Build the tree
-        spec = healerTreeSpec(self)
-        tree = myCompanionBuildTree(self)
+        spec = companionTreeSpec(self)
         if spec is not None and (isinstance(spec, list) or isinstance(spec, tuple)):
             self.buildTree(spec)
-        elif tree is not None:
-            self.setTree(tree)
-        elif len(self.states) > 0 and self.startState is not None:
-            self.changeState(self.startState)
-        # Start the agent
+            # Start the agent
         Hero.start(self)
         BehaviorTree.start(self)
 
@@ -340,44 +354,33 @@ def healerTreeSpec(agent):
     myid = str(agent.getTeam())
     spec = None
     ### YOUR CODE GOES BELOW HERE ###
-    # spec = [Selector, [HealthDaemon, HealCompanion],[LeftSideDaemon, Formation], TacticalCover]
-    spec = [Selector, [LeftSideDaemon, Formation]]  # , TacticalCover]
-    # LANSSIE STUFF
-    # spec = [(Selector, 'staring the healer'),
-    #             [(HealerDaemon, 'can the healer heal yet'),
-    #                 [(Sequence, 'healing team'), (HealClosestTeammate, 'Healing Teammate')]
-    #             ],
-    #             [(Sequence, 'doing basic movement'), (FindCover, 'finding cover')]
-    #         ]
+    spec=[(AEDaemon,'AED'),(Formation)]
     ### YOUR CODE GOES ABOVE HERE ###
     return spec
-
-
-def myHealerBuildTree(agent):
-    myid = str(agent.getTeam())
-    root = None
-    ### YOUR CODE GOES BELOW HERE ###
-
-    ### YOUR CODE GOES ABOVE HERE ###
-    return root
-
 
 def companionTreeSpec(agent):
     myid = str(agent.getTeam())
     spec = None
     ### YOUR CODE GOES BELOW HERE ###
-
+    '''
+    # This spec is the Free Formation
+    spec=[(DodgeDaemon,'DD'),[(AEDaemon,'AED'),\
+                        [(Selector,'Sel1'),\
+                            [(Selector,'Sel4'),(RetreatToHealer,0.3,'Retreat'),(Retreat,0.3,'Retreat')\
+                            ],\
+                            [(HitpointDaemon,0.3,'HPD'),\
+                                [(Sequence,'Seq1'),(ChaseEnemy,'ChaseEnemy'),(KillEnemy,'KillEnemy')\
+                                ],\
+                            ]\
+                        ]\
+                ]\
+            ]\
+    '''
+    # This spec is the Fixed Formation
+    spec=[(AEDaemon,'AED'),(Formation)]
+            
     ### YOUR CODE GOES ABOVE HERE ###
     return spec
-
-
-def myCompanionBuildTree(agent):
-    myid = str(agent.getTeam())
-    root = None
-    ### YOUR CODE GOES BELOW HERE ###
-
-    ### YOUR CODE GOES ABOVE HERE ###
-    return root
 
 
 ### Helper function for making BTNodes (and sub-classes of BTNodes).
@@ -470,6 +473,8 @@ class Formation(BTNode):
             if self.timer <= 0 or distance(self.agent.position, self.formation_node) > 5:
                 self.timer = 50
                 self.agent.navigateTo(self.formation_node)
+            shootEnRoute(self.agent)
+            AOEEnRoute(self.agent)
             return None
         return ret
 
@@ -605,10 +610,10 @@ def treeSpec(agent):
     ### YOUR CODE GOES BELOW HERE ###
     spec=[(DodgeDaemon,'DD'),[(AEDaemon,'AED'),\
                     [(Selector,'Sel1'),\
-                        (Retreat,0.3,'Retreat'),\
+                        [(Selector,'Sel4'),(RetreatToHealer,0.3,'Retreat'),(RetreatToHealer,0.3,'Retreat')],\
                         [(HitpointDaemon,0.3,'HPD'),\
                             [(Selector,'Sel2'),\
-                                [(BuffDaemon,0,'BD'),[(Sequence,'Seq1'),(ChaseHero,'ChaseHero'),(KillHero,'KillHero')]],\
+                                [(Sequence,'Seq1'),(ChaseHero,'ChaseHero'),(KillHero,'KillHero')],\
                             [(HeroPresentDaemon),[(Sequence,'Seq2'),(ChaseMinion,'ChaseM'),(KillMinion,'KillM')]],[(Sequence,'Seq3'),(ChaseHero,'ChaseHero'),(KillHero,'KillHero')]]\
                         ]\
                     ]\
@@ -729,8 +734,149 @@ class Retreat(BTNode):
             if self.timer <= 0:
                 self.timer = 50
                 self.agent.navigateTo(self.agent.world.getBaseForTeam(self.agent.getTeam()).getLocation())
+            shootEnRoute(self.agent)
+            AOEEnRoute(self.agent)
             return None
         return ret
+
+
+##################
+### ChaseEnemy
+
+class ChaseEnemy(BTNode):
+
+    def parseArgs(self, args):
+        BTNode.parseArgs(self, args)
+        self.target = None
+        self.timer = 50
+        # First argument is the node ID
+        if len(args) > 0:
+            self.id = args[0]
+
+    def enter(self):
+        BTNode.enter(self)
+        self.timer = 50
+        enemies = self.agent.world.getEnemyNPCs(self.agent.getTeam())+self.agent.world.getEnemyTowers(self.agent.getTeam())+self.agent.world.getEnemyBases(self.agent.getTeam())
+        if len(enemies) > 0:
+            best = None
+            dist = float('Inf')
+            for e in enemies:
+                d = distance(self.agent.getLocation(), e.getLocation())
+                if best == None or d < dist:
+                    best = e
+                    dist = d
+            self.target = best
+        if self.target is not None:
+            navTarget = self.chooseNavigationTarget()
+            if navTarget is not None:
+                self.agent.navigateTo(navTarget)
+
+    def execute(self, delta=0):
+        ret = BTNode.execute(self, delta)
+        if self.target == None or self.target.isAlive() == False:
+            # failed execution conditions
+            print "exec", self.id, "false"
+            return False
+        elif distance(self.agent.getLocation(), self.target.getLocation()) < BIGBULLETRANGE - 3:
+            # succeeded
+            print "exec", self.id, "true"
+            return True
+        else:
+            # executing
+            self.timer = self.timer - 1
+            if self.timer <= 0:
+                self.timer = 50
+                navTarget = self.chooseNavigationTarget()
+                if navTarget is not None:
+                    self.agent.navigateTo(navTarget)
+            shootEnRoute(self.agent)
+            AOEEnRoute(self.agent)
+            return None
+        return ret
+
+    def chooseNavigationTarget(self):
+        enemies = self.agent.world.getEnemyNPCs(self.agent.getTeam())+self.agent.world.getEnemyTowers(self.agent.getTeam())+self.agent.world.getEnemyBases(self.agent.getTeam())
+        if len(enemies) > 0:
+            best = None
+            dist = float('Inf')
+            for e in enemies:
+                if isinstance(e, Minion):
+                    d = distance(self.agent.getLocation(), e.getLocation())
+                    if best == None or d < dist:
+                        best = e
+                        dist = d
+            self.target = best
+        if self.target is not None:
+            return self.target.getLocation()
+        else:
+            return None
+
+
+##################
+### KillEnemy
+###
+### Kill the closest enemy
+
+
+class KillEnemy(BTNode):
+    ### target: the minion to shoot
+
+    def parseArgs(self, args):
+        BTNode.parseArgs(self, args)
+        self.target = None
+        # First argument is the node ID
+        if len(args) > 0:
+            self.id = args[0]
+
+    def enter(self):
+        BTNode.enter(self)
+        # self.agent.stopMoving()
+        enemies = self.agent.world.getEnemyNPCs(self.agent.getTeam())+self.agent.world.getEnemyTowers(self.agent.getTeam())+self.agent.world.getEnemyBases(self.agent.getTeam())
+        if len(enemies) > 0:
+            best = None
+            dist = float('Inf')
+            for e in enemies:
+                d = distance(self.agent.getLocation(), e.getLocation())
+                if best == None or d < dist:
+                    best = e
+                    dist = d
+            self.target = best
+            self.old = self.target.getLocation()
+            self.destinations = getDestinationsInRadius(self.agent, BIGBULLETRANGE, self.target.getLocation())
+            self.dest = getRandomDestination(self.destinations)
+
+    def execute(self, delta=0):
+        ret = BTNode.execute(self, delta)
+        if self.target == None or distance(self.agent.getLocation(), self.target.getLocation()) > BIGBULLETRANGE:
+            # failed executability conditions
+            print "exec", self.id, "false"
+            return False
+        elif self.target.isAlive() == False:
+            # succeeded
+            print "exec", self.id, "true"
+            return True
+        else:
+            # executing
+            for d in self.destinations:
+                drawCross(self.agent.world.background, d, (0, 200, 0), 2)
+            if (distance(self.agent.getLocation(), self.dest) <= 2.0 * self.agent.getMaxRadius() or rayTraceWorld(
+                    self.agent.getLocation(), self.dest, self.agent.world.getLines()) != None) and self.destinations:
+                self.dest = getRandomDestination(self.destinations)
+            if self.dest:
+                drawCross(self.agent.world.background, self.dest, (200, 0, 0), 4, 2)
+                self.agent.navigateTo(self.dest)
+            if self.agent.canAreaEffect() and distance(self.agent.getLocation(),
+                                                       self.target.getLocation()) <= AREAEFFECTRANGE:
+                self.agent.areaEffect()
+            else:
+                self.shootAtTarget()
+            return None
+        return ret
+
+    def shootAtTarget(self):
+        if self.agent is not None and self.target is not None:
+            self.agent.turnToFace(self.target.getLocation())
+            self.agent.shoot()
 
 
 ##################
@@ -1010,6 +1156,131 @@ class KillHero(BTNode):
             self.agent.shoot()
 
 
+#####################
+### Towers
+
+class ChaseTower(BTNode):
+    ### target: the hero to chase
+    ### timer: how often to replan
+
+    def ParseArgs(self, args):
+        BTNode.parseArgs(self, args)
+        self.target = None
+        self.timer = 50
+        # First argument is the node ID
+        if len(args) > 0:
+            self.id = args[0]
+
+    def enter(self):
+        BTNode.enter(self)
+        self.timer = 50
+        enemies = self.agent.world.getEnemyTowers(self.agent.getTeam())
+        dist=float('Inf')
+        for e in enemies:
+            if dist < distance(self.agent.getLocation(),e.getLocation()):
+                closest=e
+                dist=distance(self.agent.getLocation(),e.getLocation())    
+        self.target = closest
+        navTarget = self.chooseNavigationTarget()
+        if navTarget is not None:
+            self.agent.navigateTo(navTarget)
+        return None
+
+    def execute(self, delta=0):
+        ret = BTNode.execute(self, delta)
+        if self.target == None or self.target.isAlive() == False:
+            # fails executability conditions
+            print "exec", self.id, "false"
+            return False
+        elif distance(self.agent.getLocation(), self.target.getLocation()) < BIGBULLETRANGE - 3:
+            # succeeded
+            print "exec", self.id, "true"
+            return True
+        else:
+            # executing
+            self.timer = self.timer - 1
+            if self.timer <= 0:
+                self.timer = 50
+                navTarget = self.chooseNavigationTarget()
+                if navTarget is not None:
+                    self.agent.navigateTo(navTarget)
+            return None
+        return ret
+
+    def chooseNavigationTarget(self):
+        if self.target is not None:
+            return self.target.getLocation()
+        else:
+            return None
+
+
+##################
+### KillTower
+
+
+class KillTower(BTNode):
+    ### target: the minion to shoot
+
+    def ParseArgs(self, args):
+        BTNode.parseArgs(self, args)
+        self.target = None
+        # First argument is the node ID
+        if len(args) > 0:
+            self.id = args[0]
+
+    def enter(self):
+        BTNode.enter(self)
+        # self.agent.stopMoving()
+        enemies = self.agent.world.getEnemyTowers(self.agent.getTeam())
+        dist=float('Inf')
+        for e in enemies:
+            if dist < distance(self.agent.getLocation(),e.getLocation()):
+                closest=e
+                dist=distance(self.agent.getLocation(),e.getLocation())    
+        self.target = closest
+        self.destinations = getDestinationsInRadius(self.agent, BIGBULLETRANGE, self.target.getLocation())
+        self.dest = getRandomDestination(self.destinations)
+        self.old = self.target.getLocation()
+        return None
+
+    def execute(self, delta=0):
+        ret = BTNode.execute(self, delta)
+        if self.target == None or distance(self.agent.getLocation(), self.target.getLocation()) > BIGBULLETRANGE:
+            # failed executability conditions
+            if self.target == None:
+                print "foo none"
+            else:
+                print "foo dist", distance(self.agent.getLocation(), self.target.getLocation())
+            print "exec", self.id, "false"
+            return False
+        elif self.target.isAlive() == False:
+            # succeeded
+            print "exec", self.id, "true"
+            return True
+        else:
+            # executing
+            for d in self.destinations:
+                drawCross(self.agent.world.background, d, (0, 200, 0), 2)
+            if self.dest:
+                self.agent.navigateTo(self.dest)
+            if distance(self.agent.getLocation(), self.dest) <= 2.0 * self.agent.getMaxRadius() and self.destinations:
+                self.destinations = getDestinationsInRadius(self.agent, BIGBULLETRANGE, self.target.getLocation())
+                self.dest = getRandomDestination(self.destinations)
+
+            if self.agent.canAreaEffect() and distance(self.agent.getLocation(),
+                                                       self.target.getLocation()) <= AREAEFFECTRANGE:
+                self.agent.areaEffect()
+            else:
+                self.shootAtTarget()
+            return None
+        return ret
+
+    def shootAtTarget(self):
+        if self.agent is not None and self.target is not None:
+            self.agent.turnToFace(self.target.getLocation())
+            self.agent.shoot()
+
+
 ##################
 ### HitpointDaemon
 ###
@@ -1122,11 +1393,18 @@ class AEDaemon(BTNode):
 
     def execute(self, delta=0):
         ret = BTNode.execute(self, delta)
-        if self.agent.canAreaEffect():
-            enemies = self.agent.world.getEnemyNPCs(self.agent.getTeam())
-            enemy = getNearestEnemy(self.agent, enemies)
-            if distance(self.agent.getLocation(), enemy.getLocation()) <= AREAEFFECTRANGE + enemy.getRadius():
-                self.agent.areaEffect()
+        if isinstance(self,Hero):
+            if self.agent.canAreaEffect():
+                enemies = self.agent.world.getEnemyNPCs(self.agent.getTeam())+self.agent.world.getEnemyTowers(self.agent.getTeam())+self.agent.world.getEnemyBases(self.agent.getTeam())
+                enemy = getNearestEnemy(self.agent, enemies)
+                if distance(self.agent.getLocation(), enemy.getLocation()) <= AREAEFFECTRANGE + enemy.getRadius():
+                    self.agent.areaEffect()
+        elif isinstance(self,Healer):
+            if self.agent.canAreaEffectHeal():
+                allies = self.agent.world.getNPCsForTeam(self.agent.getTeam())
+                ally = getNearestEnemy(self.agent, allies)
+                if distance(self.agent.getLocation(), ally.getLocation()) <= AREAEFFECTRANGE + ally.getRadius():
+                    self.agent.areaEffectHeal()
         return self.getChild(0).execute(delta)
 
 
@@ -1158,14 +1436,17 @@ class HeroPresentDaemon(BTNode):
 
 
 ## Retreat to Healer
-class HealRetreat(BTNode):
+class RetreatToHealer(BTNode):
+
     def parseArgs(self, args):
         BTNode.parseArgs(self, args)
-        self.target = None
-        self.timer = 50
-        # First argument is the node ID
+        self.percentage = 0.5
+        # First argument is the factor
         if len(args) > 0:
-            self.id = args[0]
+            self.percentage = args[0]
+        # Second argument is the node ID
+        if len(args) > 1:
+            self.id = args[1]
 
     def enter(self):
         BTNode.enter(self)
@@ -1174,7 +1455,7 @@ class HealRetreat(BTNode):
         if len(allies) > 0:
             for a in allies:
                 if isinstance(a, Healer):
-                    self.target = a.getLocation()
+                    self.target = a
         if self.target is not None:
             navTarget = self.chooseNavigationTarget()
             if navTarget is not None:
@@ -1182,11 +1463,15 @@ class HealRetreat(BTNode):
 
     def execute(self, delta=0):
         ret = BTNode.execute(self, delta)
-        if self.target == None or self.target.isAlive() == False:
+        if self.agent.getHitpoints() > self.agent.getMaxHitpoints() * self.percentage:
+            # fail executability conditions
+            print "exec", self.id, "false"
+            return False
+        elif self.target == None or self.target.isAlive() == False:
             # failed execution conditions
             print "exec", self.id, "false"
             return False
-        elif distance(self.agent.getLocation(), self.target.getLocation()) < self.agent.getMaxRadius():
+        elif distance(self.agent.getLocation(), self.target.getLocation()) < self.agent.getMaxRadius() and self.agent.hitpoints==self.agent.getMaxHitpoints:
             # succeeded
             print "exec", self.id, "true"
             return True
@@ -1196,6 +1481,8 @@ class HealRetreat(BTNode):
             if self.timer <= 0:
                 self.timer = 50
                 self.reset()
+            shootEnRoute(self.agent)
+            AOEEnRoute(self.agent)
             return None
         return ret
 
@@ -1206,7 +1493,7 @@ class HealRetreat(BTNode):
             return None
 
 ## Retreat to Player
-class PlayerRetreat(BTNode):
+class RetreatToPlayer(BTNode):
     def parseArgs(self, args):
         BTNode.parseArgs(self, args)
         self.target = None
@@ -1244,6 +1531,9 @@ class PlayerRetreat(BTNode):
             if self.timer <= 0:
                 self.timer = 50
                 self.reset()
+            shootEnRoute(self.agent)
+            AOEEnRoute(self.agent)
+
             return None
         return ret
 
@@ -1258,7 +1548,8 @@ class PlayerRetreat(BTNode):
 ### MY UTILS
 
 def getNearestEnemy(agent, enemy_minions):
-    closest = enemy_minions[0]
+    if enemy_minions:
+        closest = enemy_minions[0]
     for enemy in enemy_minions:
         if distance(agent.getLocation(), enemy.getLocation()) < distance(agent.getLocation(), closest.getLocation()):
             closest = enemy
@@ -1305,6 +1596,37 @@ def getRandomDestination(destinations):
     random_destination = random.choice(destinations)
     return random_destination
 
+def shootEnRoute(agent):
+    enemies = agent.world.getEnemyNPCs(agent.getTeam())+agent.world.getEnemyTowers(agent.getTeam())+agent.world.getEnemyBases(agent.getTeam())
+    closest=[]
+    if len(enemies) > 0:
+        for e in enemies:
+            if distance(agent.getLocation(), e.getLocation()) < BIGBULLETRANGE:
+                closest.append(e)
+        dist=float('Inf')
+        target=None
+        for e in closest:
+            d = distance(agent.getLocation(), e.getLocation())
+            if d<dist:
+                dist=d
+                target=e
+        if target:
+            agent.turnToFace(target.getLocation())
+            agent.shoot()
+
+def AOEEnRoute(agent):
+    if isinstance(agent,Hero):
+        if agent.canAreaEffect():
+            enemies = agent.world.getEnemyNPCs(agent.getTeam())+agent.world.getEnemyTowers(agent.getTeam())+agent.world.getEnemyBases(agent.getTeam())
+            enemy = getNearestEnemy(agent, enemies)
+            if distance(agent.getLocation(), enemy.getLocation()) <= AREAEFFECTRANGE + enemy.getRadius():
+                agent.areaEffect()
+    elif isinstance(agent,Healer):
+        if agent.canAreaEffectHeal():
+            allies = agent.world.getNPCsForTeam(agent.getTeam())
+            ally = getNearestEnemy(agent, allies)
+            if distance(agent.getLocation(), ally.getLocation()) <= AREAEFFECTRANGE + ally.getRadius():
+                agent.areaEffectHeal()
 
 
 
