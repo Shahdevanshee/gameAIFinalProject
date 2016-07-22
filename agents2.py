@@ -398,11 +398,16 @@ def healerTreeSpec(agent):
     # spec = [Selector, [HealthDaemon, HealCompanion],[LeftSideDaemon, Formation], TacticalCover]
     spec = [Selector, [LeftSideDaemon, Formation]]  # , TacticalCover]
     # LANSSIE STUFF
+
     # spec = [(Selector, 'staring the healer'),
-    #             [(HealerDaemon, 'can the healer heal yet'),
+    #             [(HealerDaemon, agent.canHeal, 'can the healer heal yet'),
     #                 [(Sequence, 'healing team'), (HealClosestTeammate, 'Healing Teammate')]
     #             ],
-    #             [(Sequence, 'doing basic movement'), (FindCover, 'finding cover')]
+    #             [(Formation, 'doing regular formation')]
+    #         ]
+    # spec = [(Selector, 'staring the healer'),
+    #             [(HealClosestTeammate, 'Healing Teammate'),
+    #             (Formation, 'doing regular formation')]
     #         ]
     ### YOUR CODE GOES ABOVE HERE ###
     return spec
@@ -421,6 +426,7 @@ def companionTreeSpec(agent):
     myid = str(agent.getTeam())
     spec = None
     ### YOUR CODE GOES BELOW HERE ###
+    spec = [Selector, [LeftSideDaemon, Formation]]  # , TacticalCover]
 
     ### YOUR CODE GOES ABOVE HERE ###
     return spec
@@ -633,7 +639,9 @@ class HealerDaemon(BTNode):
         self.advantage = 0
         # First argument is the advantage
         if len(args) > 0:
-            self.id = args[0]
+            self.bool_heal = args[0]
+        if len(args) > 1:
+            self.id = args[1]
 
     def execute(self, delta=0):
         ret = BTNode.execute(self, delta)
@@ -641,7 +649,7 @@ class HealerDaemon(BTNode):
         # Get a reference to the enemy hero
         enemies = self.agent.world.getEnemyNPCs(self.agent.getTeam())
 
-        if self.canHeal:
+        if self.bool_heal:
             return self.getChild(0).execute(delta)
         else:
             # check if timer is < time it takes to get to the player?
