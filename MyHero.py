@@ -43,7 +43,7 @@ class MyHero(Hero, BehaviorTree):
 		BehaviorTree.__init__(self)
 
 		pos = self.position
-
+		self.id = 3
 		self.node_vectors = [(50,0),(75,-15),(75,15)]
 		self.nodes = [(125,145),(150,130),(150,160)]
 	
