@@ -115,6 +115,16 @@ def BarkContext(Mover):
     #     - distance to nearest cover point
     #     - health [Healer,Minion1,Minion2,Hero]
 
+    team = Mover.getTeam()
+    friends = Mover.world.getNPCsForTeam(team)
+    hero = None
+    for friend in friends:
+        if isinstance(friend,PlayerHero):
+            hero = friend
+    if hero:
+        if isinstance(Mover,MyHealer):
+            healer_values["playerHealth"] = np.float(hero.getHitpoints())/np.float(hero.getMaxHitpoints())
+            healer_values["playerDistance"] = distance(hero.position,Mover.position)
 
 
 
@@ -190,6 +200,7 @@ class Healer(MOBAAgent, Barker):
         self.myHero = None
 
         self.getHero()
+        self.barkState = BarkContext(self)
 
     def die(self):
         MOBAAgent.die(self)
@@ -249,6 +260,8 @@ class MyHealer(Healer, BehaviorTree):
         self.startState = None
         ### YOUR CODE GOES BELOW HERE ###
         self.team = self.getTeam()
+        self.justHeardBark = False
+        self.barkState = BarkContext(self)
         ### YOUR CODE GOES ABOVE HERE ###
 
     def update(self, delta):
@@ -288,6 +301,7 @@ class MyHealer(Healer, BehaviorTree):
     def hearBark(self, thebark):
         Barker.hearBark(self, thebark)
         ### YOUR CODE GOES BELOW HERE ###
+        self.justHeardBark = True
         self.calculateHeardBarkString()
 
         #region Below to be handled in behavior tree
@@ -313,6 +327,8 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
         self.states = []
         self.startState = None
         self.id = None
+        self.justHeardBark = False
+        self.barkState = BarkContext(self)
         ### YOUR CODE GOES BELOW HERE ###
 
     def die(self):
@@ -379,6 +395,7 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
     def hearBark(self, thebark):
         Barker.hearBark(self, thebark)
         ### YOUR CODE GOES BELOW HERE ###
+        self.justHeardBark = True
         self.calculateHeardBarkString()
         ### YOUR CODE GOES ABOVE HERE ###
 
@@ -410,9 +427,31 @@ def healerTreeSpec(agent):
     ### YOUR CODE GOES BELOW HERE ###
     # spec = [Selector, [HealthDaemon, HealCompanion],[LeftSideDaemon, Formation], TacticalCover]
     # spec = [Selector, [LeftSideDaemon, Formation]]  # , TacticalCover]
-    # LANSSIE STUFF
+    
+	
+	#### Chris: variables ####
+
+	# Lanssie, the variables: (these won't populate during the build tree process, since (I think) the build happens before the game starts.)
+    heard_bark = agent.justHeardBark
+    if heard_bark:
+        healer_barkContext = agent.barkState[agent.id]
+        playerHealth = healer_barkContext["playerHealth"]
+        playerDistance = healer_barkContext["playerDistance"]
+    # and to reset the bark state
+    agent.justHeardBark = False
+
+	##########################
+
+
+	# LANSSIE STUFF
     hero = self.getHero(self.agent.world.getNPCsForTeam(self.agent.getTeam()))
     # area of affect?
+
+	
+
+
+
+
     spec = [(Selector, 'starting the healer'),
                 [(HealerBarkDaemon, playerHealth, distance_helaer_to_player, barkorder,'heard bark order'), #dogde
                     [(Sequence, 'finding and healing hero sequence'), (FindTeammate, agent.myHero, 'finding hero'), (HealTeammate, agent.myHero, 'Healing Hero')]
