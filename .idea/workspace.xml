@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="93a36219-fba0-4330-adac-8b79424b008d" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/agents2.py" afterPath="$PROJECT_DIR$/agents2.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/rungame.py" afterPath="$PROJECT_DIR$/rungame.py" />
     </list>
     <ignored path="gamAISquad.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -18,7 +17,7 @@
   <component name="ChangesViewManager" flattened_view="true" show_ignored="false" />
   <component name="CoverageDataManager">
     <SUITE FILE_PATH="coverage/gamAISquad$agents2.coverage" NAME="agents2 Coverage Results" MODIFIED="1469030928785" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/gamAISquad$rungame.coverage" NAME="rungame Coverage Results" MODIFIED="1469294703155" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/gamAISquad$rungame.coverage" NAME="rungame Coverage Results" MODIFIED="1469296246315" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/gamAISquad$cover_and_shadow_functions.coverage" NAME="cover_and_shadow_functions Coverage Results" MODIFIED="1469044078784" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
   <component name="CreatePatchCommitExecutor">
@@ -35,13 +34,27 @@
           <file leaf-file-name="agents2.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/agents2.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="474">
-                  <caret line="156" column="16" selection-start-line="156" selection-start-column="16" selection-end-line="156" selection-end-column="16" />
+                <state relative-caret-position="212">
+                  <caret line="502" column="19" selection-start-line="502" selection-start-column="19" selection-end-line="502" selection-end-column="19" />
                   <folding>
                     <element signature="e#736#787#0" expanded="true" />
+                    <element signature="e#1301#8882#0" expanded="false" />
                     <element signature="e#1301#1325#0" expanded="false" />
-                    <marker date="1469294703103" expanded="false" signature="1363:1894" ph="..." />
+                    <element signature="e#8956#10121#0" expanded="false" />
+                    <element signature="e#10143#10351#0" expanded="false" />
+                    <element signature="e#10434#11651#0" expanded="false" />
+                    <marker date="1469296246294" expanded="false" signature="1363:1894" ph="..." />
                   </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="sprite.py" pinned="false" current-in-tab="false">
+            <entry file="file://C:/Anaconda2/Lib/site-packages/pygame/sprite.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="212">
+                  <caret line="461" column="0" selection-start-line="461" selection-start-column="0" selection-end-line="461" selection-end-column="0" />
+                  <folding />
                 </state>
               </provider>
             </entry>
@@ -49,8 +62,8 @@
           <file leaf-file-name="rungame.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/rungame.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="318">
-                  <caret line="216" column="24" selection-start-line="216" selection-start-column="24" selection-end-line="216" selection-end-column="24" />
+                <state relative-caret-position="337">
+                  <caret line="215" column="0" selection-start-line="215" selection-start-column="0" selection-end-line="215" selection-end-column="0" />
                   <folding>
                     <element signature="e#7226#7259#0" expanded="false" />
                   </folding>
@@ -65,7 +78,7 @@
           <file leaf-file-name="cover_and_shadow_functions.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/cover_and_shadow_functions.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="212">
+                <state relative-caret-position="-1138">
                   <caret line="29" column="0" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
                   <folding />
                 </state>
@@ -487,11 +500,11 @@
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32878152" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32983193" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32983193" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="true" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.30252102" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.30252102" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -518,16 +531,6 @@
           <line>135</line>
           <option name="timeStamp" value="31" />
         </line-breakpoint>
-        <line-breakpoint enabled="true" type="python-line">
-          <url>file://$PROJECT_DIR$/rungame.py</url>
-          <line>215</line>
-          <option name="timeStamp" value="44" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="python-line">
-          <url>file://$PROJECT_DIR$/rungame.py</url>
-          <line>216</line>
-          <option name="timeStamp" value="45" />
-        </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
         <breakpoint type="python-exception">
@@ -536,9 +539,13 @@
           </properties>
         </breakpoint>
       </default-breakpoints>
-      <option name="time" value="52" />
+      <option name="time" value="58" />
     </breakpoint-manager>
-    <watches-manager />
+    <watches-manager>
+      <configuration name="PythonConfigurationType">
+        <watch expression="self.nearestShadow" />
+      </configuration>
+    </watches-manager>
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/agents2.py">
@@ -547,8 +554,12 @@
           <caret line="91" column="0" selection-start-line="91" selection-start-column="0" selection-end-line="91" selection-end-column="0" />
           <folding>
             <element signature="e#736#787#0" expanded="true" />
+            <element signature="e#1301#8882#0" expanded="false" />
             <element signature="e#1301#1325#0" expanded="false" />
-            <marker date="1469294703103" expanded="false" signature="1363:1894" ph="..." />
+            <element signature="e#8956#10121#0" expanded="false" />
+            <element signature="e#10143#10351#0" expanded="false" />
+            <element signature="e#10434#11651#0" expanded="false" />
+            <marker date="1469296246294" expanded="false" signature="1363:1894" ph="..." />
           </folding>
         </state>
       </provider>
@@ -635,7 +646,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/cover_and_shadow_functions.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="212">
+        <state relative-caret-position="-1138">
           <caret line="29" column="0" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
           <folding />
         </state>
@@ -643,22 +654,34 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/rungame.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="318">
-          <caret line="216" column="24" selection-start-line="216" selection-start-column="24" selection-end-line="216" selection-end-column="24" />
+        <state relative-caret-position="337">
+          <caret line="215" column="0" selection-start-line="215" selection-start-column="0" selection-end-line="215" selection-end-column="0" />
           <folding>
             <element signature="e#7226#7259#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://C:/Anaconda2/Lib/site-packages/pygame/sprite.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="212">
+          <caret line="461" column="0" selection-start-line="461" selection-start-column="0" selection-end-line="461" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/agents2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="474">
-          <caret line="156" column="16" selection-start-line="156" selection-start-column="16" selection-end-line="156" selection-end-column="16" />
+        <state relative-caret-position="212">
+          <caret line="502" column="19" selection-start-line="502" selection-start-column="19" selection-end-line="502" selection-end-column="19" />
           <folding>
             <element signature="e#736#787#0" expanded="true" />
+            <element signature="e#1301#8882#0" expanded="false" />
             <element signature="e#1301#1325#0" expanded="false" />
-            <marker date="1469294703103" expanded="false" signature="1363:1894" ph="..." />
+            <element signature="e#8956#10121#0" expanded="false" />
+            <element signature="e#10143#10351#0" expanded="false" />
+            <element signature="e#10434#11651#0" expanded="false" />
+            <marker date="1469296246294" expanded="false" signature="1363:1894" ph="..." />
           </folding>
         </state>
       </provider>

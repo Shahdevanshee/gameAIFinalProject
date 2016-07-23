@@ -313,8 +313,6 @@ class Healer(MOBAAgent, Barker):
         self.myHero = None
 
         self.getHero()
-        self.barkState = BarkContext(self)
-
     def die(self):
         MOBAAgent.die(self)
         self.world.addNPC(self)
@@ -326,11 +324,18 @@ class Healer(MOBAAgent, Barker):
 
     def update(self, delta=0):
         MOBAAgent.update(self, delta)
+
+        #region Healing
         if self.canHeal == False:
             self.healTimer = self.healTimer + 1
             if self.healTimer >= self.healRate:
                 self.canHeal = True
                 self.healTimer = 0
+        #endregion
+
+
+
+
 
     def heal(self, agent):
         if self.canHeal:
@@ -376,11 +381,31 @@ class MyHealer(Healer, BehaviorTree):
         self.justHeardBark = False
         self.barkState = BarkContext(self)
         ### YOUR CODE GOES ABOVE HERE ###
+        self.nearestShadow = None
+
 
     def update(self, delta):
         Healer.update(self, delta)
         BehaviorTree.update(self, delta)
 
+        #region  Shadow Update
+        self.nearestShadow = sorted(self.world.shadowCentroids,key=lambda x: distance(x,self.position))[0]
+        #endregion
+        # region testing
+        # nearest_shadow_grid = self.getNearestShadowGrid()
+        # nearest_cover_node_at_destination = self.getNearestCoverNode_AtPosition((100,100))
+        # nearest_cover_node = self.getNearestCoverNode()
+        # endregion
+
+    def getNearestShadowGrid(self):
+        return self.world.shadows[self.nearestShadow]
+    def getNearestCoverNode_AtPosition(self,destination):
+        relevant_shadow = sorted(self.world.shadowCentroids,key=lambda x: distance(x,self.position))[0]
+        shadow_grid = self.world.shadows[relevant_shadow]
+        nearest_node = sorted(shadow_grid,key=lambda x:distance(x,destination))[0]
+        return nearest_node
+    def getNearestCoverNode(self):
+        return self.getNearestCoverNode_AtPosition(self.position)
     def start(self):
         # Build the tree
         spec = healerTreeSpec(self)
@@ -443,6 +468,7 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
         self.justHeardBark = False
         self.barkState = BarkContext(self)
         ### YOUR CODE GOES BELOW HERE ###
+        self.nearestShadow =None
 
     def die(self):
         Hero.die(self)
@@ -471,6 +497,25 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
     def update(self, delta):
         Hero.update(self, delta)
         BehaviorTree.update(self, delta)
+
+        # region  Shadow Update
+        self.nearestShadow = sorted(self.world.shadowCentroids, key=lambda x: distance(x, self.position))[0]
+        # endregion
+        # region testing
+        # nearest_shadow_grid = self.getNearestShadowGrid()
+        # nearest_cover_node_at_destination = self.getNearestCoverNode_AtPosition((100,100))
+        # nearest_cover_node = self.getNearestCoverNode()
+        # endregion
+
+    def getNearestShadowGrid(self):
+        return self.world.shadows[self.nearestShadow]
+    def getNearestCoverNode_AtPosition(self,destination):
+        relevant_shadow = sorted(self.world.shadowCentroids,key=lambda x: distance(x,self.position))[0]
+        shadow_grid = self.world.shadows[relevant_shadow]
+        nearest_node = sorted(shadow_grid,key=lambda x:distance(x,destination))[0]
+        return nearest_node
+    def getNearestCoverNode(self):
+        return self.getNearestCoverNode_AtPosition(self.position)
 
     def start(self):
         # Build the tree
