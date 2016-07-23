@@ -1221,7 +1221,17 @@ class GameWorld():
                     if isGood(point, self, grid):
                         destinations.append(point)
             self.destinations[type(agent)] = destinations
-        
+
+    def computeFreeLocations_ByRadius(self,radius):
+        destinations = []
+        grid = radius*2.0
+        for x in xrange(1,int(self.dimensions[0]/grid)):
+            for y in xrange(1,int(self.dimensions[1]/grid)):
+                point = (x*grid,y*grid)
+                if isGood(point,self,grid):
+                    destinations.append(point)
+        return destinations
+
     def getFreeLocations(self, agent):
         if type(agent) in self.destinations:
             return self.destinations[type(agent)]
