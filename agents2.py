@@ -463,6 +463,7 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
                       dodgerate, areaeffectrate, areaeffectdamage)
         BehaviorTree.__init__(self)
         self.states = []
+        self.speed = (self.speed[0]*3,self.speed[1]*3)
         self.startState = None
         self.id = None
         self.justHeardBark = False
