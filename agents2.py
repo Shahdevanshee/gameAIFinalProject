@@ -50,7 +50,7 @@ class MOBAWorld2(MOBAWorld):
         manual_obstacle_shadowParams = [ShadowParams(manual_obstacle, origin=enemy_base.position, gui_modifier=(1, -1))
                                         for manual_obstacle in manual_obstacles]
 
-        self.obstacleShadows = manual_obstacle_shadowParams;
+        self.obstacleShadowParameters = manual_obstacle_shadowParams;
 
 
     def doKeyDown(self, key):
@@ -69,7 +69,7 @@ class MOBAWorld2(MOBAWorld):
 
         cover_nodes = []
         shadow_nodes = []
-        for shadow in self.obstacleShadows:
+        for shadow in self.obstacleShadowParameters:
             shadow_nodes.append(GamePoint_From_RelativePolarCoordinate((shadow[0], shadow[1]), enemy_base.position))
             shadow_nodes.append(GamePoint_From_RelativePolarCoordinate((shadow[0], shadow[2]), enemy_base.position))
 
@@ -90,16 +90,71 @@ class MOBAWorld2(MOBAWorld):
                 cover_nodes.append(test_cartesian)
                 point_counter+=1
 
-        self.obstacleCoverNodes = cover_nodes
-        self.shadowParameterNodes = shadow_nodes
+        self.obstacleCoverNodes_Randomized = cover_nodes
+        self.shadowCartesianParameters = shadow_nodes
+
+    def getShadows(self):
+        all_bases = self.getBases()
+        enemy_base_index = numpy.argmax([base.position[0] for base in all_bases])
+        enemy_base = all_bases[enemy_base_index]
+
+        grid = self.computeFreeLocations_ByRadius(10.0)
+
+        shadow_centroids = []
+        # shadows are indexed by shadow centroids
+        shadows = {}
+
+
+        for obstacle_shadow in self.obstacleShadowParameters:
+            cover_grid = []
+
+            r_min = obstacle_shadow[0]
+            r_max = r_min + 300
+
+            theta_max = obstacle_shadow[1]
+            theta_min = obstacle_shadow[2]
+
+            for point in grid:
+                polar_point =  GamePoint_2_RelativePolarCoordinate(point,enemy_base.position)
+                # if polar_point is in obstacle_shadow, and r is within 200, then add it
+                # ...to cover_grid
+                polar_point_r = polar_point[0]
+                polar_point_theta = polar_point[1]
+
+                if polar_point_r <= r_max and polar_point_r > r_min:
+                    if polar_point_theta <= theta_max and polar_point_theta >= theta_min:
+                        cover_grid.append(point)
+            # calculate centroid of cover_grid
+            if len(cover_grid) > 0:
+                exes,whys = zip(*cover_grid)
+                centroid = (np.mean(exes),np.mean(whys))
+                shadow_centroids.append(centroid)
+                shadows[centroid] = cover_grid
+            else:
+                centroid = GamePoint_From_RelativePolarCoordinate((r_min + 50,(theta_max + theta_min)/2.0),enemy_base.position)
+                shadow_centroids.append(centroid)
+                shadows[centroid] = cover_grid
+        self.shadowCentroids = shadow_centroids
+        self.shadows = shadows
+
+
+
+
+
+
 
     def update(self, delta):
         MOBAWorld.update(self, delta)
-        for point in self.obstacleCoverNodes:
-            drawCross(self.background, point, color=(0,0,255),size=6,width=2)
-        for point in self.shadowParameterNodes:
+        # for point in self.obstacleCoverNodes:
+        #     drawCross(self.background, point, color=(0,0,255),size=6,width=2)
+        for point in self.shadowCartesianParameters:
             drawCross(self.background, point, color=(0, 255, 0), size=15, width=4)
             drawCross(self.background, (100, 100), color=(0, 255, 0))
+
+        for shadow_centroid in self.shadowCentroids:
+            cover_nodes = self.shadows[shadow_centroid]
+            for node in cover_nodes:
+                drawCross(self.background,node,color=(150,150,150),size=5,width = 4)
 
 
 #############################################
@@ -437,27 +492,22 @@ def healerTreeSpec(agent):
     # and to reset the bark state
     agent.justHeardBark = False
 
-	##########################
+    ##########################
 
 
 	# LANSSIE STUFF
-    hero = self.getHero(self.agent.world.getNPCsForTeam(self.agent.getTeam()))
+    #hero = self.getHero(self.agent.world.getNPCsForTeam(self.agent.getTeam()))
     # area of affect?
 
-	
-
-
-
-
-    spec = [(Selector, 'starting the healer'),
-                [(HealerBarkDaemon, playerHealth, distance_helaer_to_player, barkorder,'heard bark order'), #dogde
-                    [(Sequence, 'finding and healing hero sequence'), (FindTeammate, agent.myHero, 'finding hero'), (HealTeammate, agent.myHero, 'Healing Hero')]
-                ],
-                [(HealTeammateDaemon, 'regular healing'), #dodge
-                    [(Sequence, 'finding and healing teammate sequence'),(FindTeammate, agent.minionTarget, 'finding hero'), (HealTeammate, agent.minionTarget, 'Healing Hero')],
-                ],
-                (Formation, 'doing regular formation')
-            ]
+    # spec = [(Selector, 'starting the healer'),
+    #             [(HealerBarkDaemon, playerHealth, distance_helaer_to_player, barkorder,'heard bark order'), #dogde
+    #                 [(Sequence, 'finding and healing hero sequence'), (FindTeammate, agent.myHero, 'finding hero'), (HealTeammate, agent.myHero, 'Healing Hero')]
+    #             ],
+    #             [(HealTeammateDaemon, 'regular healing'), #dodge
+    #                 [(Sequence, 'finding and healing teammate sequence'),(FindTeammate, agent.minionTarget, 'finding hero'), (HealTeammate, agent.minionTarget, 'Healing Hero')],
+    #             ],
+    #             (Formation, 'doing regular formation')
+    #         ]
     ### YOUR CODE GOES ABOVE HERE ###
     return spec
 
@@ -699,7 +749,7 @@ class HealTeammate(BTNode):
             self.id = args[1]
 
     def enter(self):
-        
+        return None
 
     def execute(self, delta=0):
         ret = BTNode.execute(self, delta)

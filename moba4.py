@@ -541,8 +541,8 @@ class MOBAWorld(GatedWorld):
         self.bases = []
         self.towers = []
         self.score = {}
-        self.obstacleShadows = []
-        self.obstacleCoverNodes = []
+        self.obstacleShadowParameters = []
+        self.obstacleCoverNodes_Randomized = []
 
 
     def addBase(self, base):

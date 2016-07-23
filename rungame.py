@@ -214,6 +214,7 @@ for loc in weenies:
 #################################################
 world.getBaseShadows()
 world.getCoverNodes()
+world.getShadows()
 #################################################
 # This is the shadows and cover node entry point#
 #################################################
