@@ -425,6 +425,8 @@ class MyHealer(Healer, BehaviorTree):
         Healer.stop(self)
         BehaviorTree.stop(self)
 
+    def communicationBark(self,string):
+        print string
     def calculateBarkString(self):
         print "Companion Minion Barking!!!"
         return None
@@ -489,7 +491,8 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
     def calculateBarkString(self):
         print "Companion Minion Barking!!!"
         return None
-
+    def communicationBark(self,string):
+        print string
     def bark(self):
         Barker.bark(self)
         ### YOUR CODE GOES BELOW HERE
