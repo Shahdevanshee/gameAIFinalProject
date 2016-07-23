@@ -125,15 +125,12 @@ def BarkContext(Mover):
         if isinstance(Mover,MyHealer):
             healer_values["playerHealth"] = np.float(hero.getHitpoints())/np.float(hero.getMaxHitpoints())
             healer_values["playerDistance"] = distance(hero.position,Mover.position)
-
-
-
-
-
-
-
-
-
+        else:
+            healer_values["playerHealth"] = None
+            healer_values["playerDistance"] = None
+    else:
+        healer_values["playerHealth"] = None
+        healer_values["playerDistance"] = None
 
     barkState[0] = healer_values
     barkState[1] = minion_1_values
@@ -242,7 +239,7 @@ class Healer(MOBAAgent, Barker):
         npc_list = self.world.getNPCsForTeam(self.getTeam())
         hero = None
         for npc in npc_list:
-            if isinstance(i, PlayerHero):
+            if isinstance(npc, PlayerHero):
                 self.myHero = npc
                 return None
         return None
