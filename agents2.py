@@ -375,6 +375,7 @@ class MyHealer(Healer, BehaviorTree):
                         healrate)
         BehaviorTree.__init__(self)
         self.states = []
+        self.speed = (self.speed[0]*4.5,self.speed[1]*4.5)
         self.startState = None
         ### YOUR CODE GOES BELOW HERE ###
         self.team = self.getTeam()
