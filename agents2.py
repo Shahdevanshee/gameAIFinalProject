@@ -41,6 +41,8 @@ def roomForFormation(point, MOBAWorld):
 
 
 class MOBAWorld2(MOBAWorld):
+    #region Old Shadow Stuff
+    '''
     def getBaseShadows(self):
         ###################### Our Code Here
         all_bases = self.getBases()
@@ -51,16 +53,6 @@ class MOBAWorld2(MOBAWorld):
                                         for manual_obstacle in manual_obstacles]
 
         self.obstacleShadowParameters = manual_obstacle_shadowParams;
-
-
-    def doKeyDown(self, key):
-        MOBAWorld.doKeyDown(self, key)
-        if key == K_e:  # 'e'
-            if isinstance(self.agent, PlayerHero):
-                self.agent.bark()
-        return None
-
-
     def getCoverNodes(self):
         ###################### Our Code Here
         all_bases = self.getBases()
@@ -73,22 +65,21 @@ class MOBAWorld2(MOBAWorld):
             shadow_nodes.append(GamePoint_From_RelativePolarCoordinate((shadow[0], shadow[1]), enemy_base.position))
             shadow_nodes.append(GamePoint_From_RelativePolarCoordinate((shadow[0], shadow[2]), enemy_base.position))
 
-
-            avg_theta = (shadow[1] + shadow[2])/2
-            diff = np.abs(shadow[1]-avg_theta)/2
+            avg_theta = (shadow[1] + shadow[2]) / 2
+            diff = np.abs(shadow[1] - avg_theta) / 2
 
             high_theta = avg_theta + diff
             low_theta = avg_theta - diff
 
             point_counter = 0
             while point_counter < 10:
-                r = np.random.randint(shadow[0]+50,shadow[0]+100)
-                theta_new = (np.random.random()-0.5)*diff + low_theta
+                r = np.random.randint(shadow[0] + 50, shadow[0] + 100)
+                theta_new = (np.random.random() - 0.5) * diff + low_theta
 
-                test_cartesian = GamePoint_From_RelativePolarCoordinate((r,theta_new),enemy_base.position)
+                test_cartesian = GamePoint_From_RelativePolarCoordinate((r, theta_new), enemy_base.position)
 
                 cover_nodes.append(test_cartesian)
-                point_counter+=1
+                point_counter += 1
 
         self.obstacleCoverNodes_Randomized = cover_nodes
         self.shadowCartesianParameters = shadow_nodes
@@ -104,7 +95,6 @@ class MOBAWorld2(MOBAWorld):
         # shadows are indexed by shadow centroids
         shadows = {}
 
-
         for obstacle_shadow in self.obstacleShadowParameters:
             cover_grid = []
 
@@ -115,7 +105,7 @@ class MOBAWorld2(MOBAWorld):
             theta_min = obstacle_shadow[2]
 
             for point in grid:
-                polar_point =  GamePoint_2_RelativePolarCoordinate(point,enemy_base.position)
+                polar_point = GamePoint_2_RelativePolarCoordinate(point, enemy_base.position)
                 # if polar_point is in obstacle_shadow, and r is within 200, then add it
                 # ...to cover_grid
                 polar_point_r = polar_point[0]
@@ -126,35 +116,106 @@ class MOBAWorld2(MOBAWorld):
                         cover_grid.append(point)
             # calculate centroid of cover_grid
             if len(cover_grid) > 0:
+                exes, whys = zip(*cover_grid)
+                centroid = (np.mean(exes), np.mean(whys))
+                shadow_centroids.append(centroid)
+                shadows[centroid] = cover_grid
+            else:
+                centroid = GamePoint_From_RelativePolarCoordinate((r_min + 50, (theta_max + theta_min) / 2.0),
+                                                                  enemy_base.position)
+                shadow_centroids.append(centroid)
+                shadows[centroid] = cover_grid
+        self.shadowCentroids = shadow_centroids
+        self.shadows = shadows
+    '''
+    #endregion
+    def doKeyDown(self, key):
+        MOBAWorld.doKeyDown(self, key)
+        if key == K_e:  # 'e'
+            if isinstance(self.agent, PlayerHero):
+                self.agent.bark()
+        return None
+
+    def getStationaryShooterShadowParams(self):
+        all_bases = self.getBases()
+        enemy_base_index = numpy.argmax([base.position[0] for base in all_bases])
+        enemy_base = all_bases[enemy_base_index]
+
+        enemy_towers = self.getTowersForTeam(2)
+
+
+        self.stationaryShooters = [enemy_base] + enemy_towers
+        manual_obstacles = self.getObstacles()
+
+        self.shadowParameters = {}
+        for obstacle in manual_obstacles:
+            shooter_shadow_params = {}
+            for shooter in self.stationaryShooters:
+                shooter_shadow_params[shooter] = ShadowParams(obstacle,origin=shooter.position)
+            ###
+            self.shadowParameters[obstacle] = shooter_shadow_params
+    def getShadows_final(self):
+        all_bases = self.getBases()
+        enemy_base_index = numpy.argmax([base.position[0] for base in all_bases])
+        enemy_base = all_bases[enemy_base_index]
+        grid = self.computeFreeLocations_ByRadius(10.0)
+
+        shadow_centroids = []
+        # shadows are indexed by shadow centroids
+        shadows = {}
+
+        obstacles = self.getObstacles()
+        for obstacle in obstacles:
+            cover_grid = []
+            for point in grid:
+                valid_cover_point = True
+
+                # could be optimized with a break
+                for shooter in self.stationaryShooters:
+                    shadow_parameters = self.shadowParameters[obstacle][shooter]
+
+                    r_min = shadow_parameters[0]
+                    r_max = r_min + 300
+                    theta_max = shadow_parameters[1]
+                    theta_min = shadow_parameters[2]
+
+                    polar_point = GamePoint_2_RelativePolarCoordinate(point,shooter.position)
+                    polar_point_r = polar_point[0]
+                    polar_point_theta = polar_point[1]
+                    if not (polar_point_r <= r_max and polar_point_r > r_min and polar_point_theta <= theta_max and polar_point_theta >= theta_min):
+                        valid_cover_point = False
+                if valid_cover_point:
+                    cover_grid.append(point)
+            # build cover dictionary
+            # calculate centroid of cover_grid
+            if len(cover_grid) > 0:
                 exes,whys = zip(*cover_grid)
                 centroid = (np.mean(exes),np.mean(whys))
                 shadow_centroids.append(centroid)
                 shadows[centroid] = cover_grid
             else:
+                base_shadow_params = self.shadowParameters[obstacle][enemy_base]
+                r_min = base_shadow_params[0]
+                theta_max = base_shadow_params[1]
+                theta_min = base_shadow_params[2]
                 centroid = GamePoint_From_RelativePolarCoordinate((r_min + 50,(theta_max + theta_min)/2.0),enemy_base.position)
                 shadow_centroids.append(centroid)
                 shadows[centroid] = cover_grid
         self.shadowCentroids = shadow_centroids
         self.shadows = shadows
 
-
-
-
-
-
-
     def update(self, delta):
         MOBAWorld.update(self, delta)
         # for point in self.obstacleCoverNodes:
         #     drawCross(self.background, point, color=(0,0,255),size=6,width=2)
-        for point in self.shadowCartesianParameters:
-            drawCross(self.background, point, color=(0, 255, 0), size=15, width=4)
-            drawCross(self.background, (100, 100), color=(0, 255, 0))
+        #for point in self.shadowCartesianParameters:
+        #    drawCross(self.background, point, color=(0, 255, 0), size=15, width=4)
+        #    drawCross(self.background, (100, 100), color=(0, 255, 0))
 
         for shadow_centroid in self.shadowCentroids:
             cover_nodes = self.shadows[shadow_centroid]
             for node in cover_nodes:
-                drawCross(self.background,node,color=(150,150,150),size=5,width = 4)
+                drawCross(self.background,node,color=(75,150,150),size=5,width = 4)
 
 
 #############################################
