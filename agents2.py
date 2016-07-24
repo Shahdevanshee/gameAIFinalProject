@@ -1618,15 +1618,17 @@ def AOEEnRoute(agent):
     if isinstance(agent,Hero):
         if agent.canAreaEffect():
             enemies = agent.world.getEnemyNPCs(agent.getTeam())+agent.world.getEnemyTowers(agent.getTeam())+agent.world.getEnemyBases(agent.getTeam())
-            enemy = getNearestEnemy(agent, enemies)
-            if distance(agent.getLocation(), enemy.getLocation()) <= AREAEFFECTRANGE + enemy.getRadius():
-                agent.areaEffect()
+            if enemies:
+                enemy = getNearestEnemy(agent, enemies)
+                if distance(agent.getLocation(), enemy.getLocation()) <= AREAEFFECTRANGE + enemy.getRadius():
+                    agent.areaEffect()
     elif isinstance(agent,Healer):
         if agent.canAreaEffectHeal():
             allies = agent.world.getNPCsForTeam(agent.getTeam())
-            ally = getNearestEnemy(agent, allies)
-            if distance(agent.getLocation(), ally.getLocation()) <= AREAEFFECTRANGE + ally.getRadius():
-                agent.areaEffectHeal()
+            if allies:
+                ally = getNearestEnemy(agent, allies)
+                if distance(agent.getLocation(), ally.getLocation()) <= AREAEFFECTRANGE + ally.getRadius():
+                    agent.areaEffectHeal()
 
 
 
