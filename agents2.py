@@ -41,6 +41,8 @@ def roomForFormation(point, MOBAWorld):
 
 
 class MOBAWorld2(MOBAWorld):
+    #region Old Shadow Stuff
+    '''
     def getBaseShadows(self):
         ###################### Our Code Here
         all_bases = self.getBases()
@@ -50,17 +52,7 @@ class MOBAWorld2(MOBAWorld):
         manual_obstacle_shadowParams = [ShadowParams(manual_obstacle, origin=enemy_base.position, gui_modifier=(1, -1))
                                         for manual_obstacle in manual_obstacles]
 
-        self.obstacleShadows = manual_obstacle_shadowParams;
-
-
-    def doKeyDown(self, key):
-        MOBAWorld.doKeyDown(self, key)
-        if key == K_e:  # 'e'
-            if isinstance(self.agent, PlayerHero):
-                self.agent.bark()
-        return None
-
-
+        self.obstacleShadowParameters = manual_obstacle_shadowParams;
     def getCoverNodes(self):
         ###################### Our Code Here
         all_bases = self.getBases()
@@ -69,50 +61,213 @@ class MOBAWorld2(MOBAWorld):
 
         cover_nodes = []
         shadow_nodes = []
-        for shadow in self.obstacleShadows:
+        for shadow in self.obstacleShadowParameters:
             shadow_nodes.append(GamePoint_From_RelativePolarCoordinate((shadow[0], shadow[1]), enemy_base.position))
             shadow_nodes.append(GamePoint_From_RelativePolarCoordinate((shadow[0], shadow[2]), enemy_base.position))
 
-
-            avg_theta = (shadow[1] + shadow[2])/2
-            diff = np.abs(shadow[1]-avg_theta)/2
+            avg_theta = (shadow[1] + shadow[2]) / 2
+            diff = np.abs(shadow[1] - avg_theta) / 2
 
             high_theta = avg_theta + diff
             low_theta = avg_theta - diff
 
             point_counter = 0
             while point_counter < 10:
-                r = np.random.randint(shadow[0]+50,shadow[0]+100)
-                theta_new = (np.random.random()-0.5)*diff + low_theta
+                r = np.random.randint(shadow[0] + 50, shadow[0] + 100)
+                theta_new = (np.random.random() - 0.5) * diff + low_theta
 
-                test_cartesian = GamePoint_From_RelativePolarCoordinate((r,theta_new),enemy_base.position)
+                test_cartesian = GamePoint_From_RelativePolarCoordinate((r, theta_new), enemy_base.position)
 
                 cover_nodes.append(test_cartesian)
-                point_counter+=1
+                point_counter += 1
 
-        self.obstacleCoverNodes = cover_nodes
-        self.shadowParameterNodes = shadow_nodes
+        self.obstacleCoverNodes_Randomized = cover_nodes
+        self.shadowCartesianParameters = shadow_nodes
+
+    def getShadows(self):
+        all_bases = self.getBases()
+        enemy_base_index = numpy.argmax([base.position[0] for base in all_bases])
+        enemy_base = all_bases[enemy_base_index]
+
+        grid = self.computeFreeLocations_ByRadius(10.0)
+
+        shadow_centroids = []
+        # shadows are indexed by shadow centroids
+        shadows = {}
+
+        for obstacle_shadow in self.obstacleShadowParameters:
+            cover_grid = []
+
+            r_min = obstacle_shadow[0]
+            r_max = r_min + 300
+
+            theta_max = obstacle_shadow[1]
+            theta_min = obstacle_shadow[2]
+
+            for point in grid:
+                polar_point = GamePoint_2_RelativePolarCoordinate(point, enemy_base.position)
+                # if polar_point is in obstacle_shadow, and r is within 200, then add it
+                # ...to cover_grid
+                polar_point_r = polar_point[0]
+                polar_point_theta = polar_point[1]
+
+                if polar_point_r <= r_max and polar_point_r > r_min:
+                    if polar_point_theta <= theta_max and polar_point_theta >= theta_min:
+                        cover_grid.append(point)
+            # calculate centroid of cover_grid
+            if len(cover_grid) > 0:
+                exes, whys = zip(*cover_grid)
+                centroid = (np.mean(exes), np.mean(whys))
+                shadow_centroids.append(centroid)
+                shadows[centroid] = cover_grid
+            else:
+                centroid = GamePoint_From_RelativePolarCoordinate((r_min + 50, (theta_max + theta_min) / 2.0),
+                                                                  enemy_base.position)
+                shadow_centroids.append(centroid)
+                shadows[centroid] = cover_grid
+        self.shadowCentroids = shadow_centroids
+        self.shadows = shadows
+    '''
+    #endregion
+    def doKeyDown(self, key):
+        MOBAWorld.doKeyDown(self, key)
+        if key == K_e:  # 'e'
+            if isinstance(self.agent, PlayerHero):
+                self.agent.bark()
+        return None
+
+    def getStationaryShooterShadowParams(self):
+        all_bases = self.getBases()
+        enemy_base_index = numpy.argmax([base.position[0] for base in all_bases])
+        enemy_base = all_bases[enemy_base_index]
+
+        enemy_towers = self.getTowersForTeam(2)
+
+
+        self.stationaryShooters = [enemy_base] + enemy_towers
+        manual_obstacles = self.getObstacles()
+
+        self.shadowParameters = {}
+        for obstacle in manual_obstacles:
+            shooter_shadow_params = {}
+            for shooter in self.stationaryShooters:
+                shooter_shadow_params[shooter] = ShadowParams(obstacle,origin=shooter.position)
+            ###
+            self.shadowParameters[obstacle] = shooter_shadow_params
+    def getShadows_final(self):
+        all_bases = self.getBases()
+        enemy_base_index = numpy.argmax([base.position[0] for base in all_bases])
+        enemy_base = all_bases[enemy_base_index]
+        grid = self.computeFreeLocations_ByRadius(10.0)
+
+        shadow_centroids = []
+        # shadows are indexed by shadow centroids
+        shadows = {}
+
+        obstacles = self.getObstacles()
+        for obstacle in obstacles:
+            cover_grid = []
+            for point in grid:
+                valid_cover_point = True
+
+                # could be optimized with a break
+                for shooter in self.stationaryShooters:
+                    shadow_parameters = self.shadowParameters[obstacle][shooter]
+
+                    r_min = shadow_parameters[0]
+                    r_max = r_min + 300
+                    theta_max = shadow_parameters[1]
+                    theta_min = shadow_parameters[2]
+
+                    polar_point = GamePoint_2_RelativePolarCoordinate(point,shooter.position)
+                    polar_point_r = polar_point[0]
+                    polar_point_theta = polar_point[1]
+                    if not (polar_point_r <= r_max and polar_point_r > r_min and polar_point_theta <= theta_max and polar_point_theta >= theta_min):
+                        valid_cover_point = False
+                if valid_cover_point:
+                    cover_grid.append(point)
+            # build cover dictionary
+            # calculate centroid of cover_grid
+            if len(cover_grid) > 0:
+                exes,whys = zip(*cover_grid)
+                centroid = (np.mean(exes),np.mean(whys))
+                shadow_centroids.append(centroid)
+                shadows[centroid] = cover_grid
+            else:
+                base_shadow_params = self.shadowParameters[obstacle][enemy_base]
+                r_min = base_shadow_params[0]
+                theta_max = base_shadow_params[1]
+                theta_min = base_shadow_params[2]
+                centroid = GamePoint_From_RelativePolarCoordinate((r_min + 50,(theta_max + theta_min)/2.0),enemy_base.position)
+                shadow_centroids.append(centroid)
+                shadows[centroid] = cover_grid
+        self.shadowCentroids = shadow_centroids
+        self.shadows = shadows
 
     def update(self, delta):
         MOBAWorld.update(self, delta)
-        for point in self.obstacleCoverNodes:
-            drawCross(self.background, point, color=(0,0,255),size=6,width=2)
-        for point in self.shadowParameterNodes:
-            drawCross(self.background, point, color=(0, 255, 0), size=15, width=4)
-            drawCross(self.background, (100, 100), color=(0, 255, 0))
+        # for point in self.obstacleCoverNodes:
+        #     drawCross(self.background, point, color=(0,0,255),size=6,width=2)
+        #for point in self.shadowCartesianParameters:
+        #    drawCross(self.background, point, color=(0, 255, 0), size=15, width=4)
+        #    drawCross(self.background, (100, 100), color=(0, 255, 0))
+
+        for shadow_centroid in self.shadowCentroids:
+            cover_nodes = self.shadows[shadow_centroid]
+            for node in cover_nodes:
+                drawCross(self.background,node,color=(75,150,150),size=5,width = 4)
 
 
 #############################################
+def BarkContext(Mover):
+    barkState = {}
+    healer_values = {}
+    minion_1_values = {}
+    minion_2_values = {}
+    ###########################################################
+
+    # desired values:
+    #     - relative distance to [Healer,Minion1,Minion2,Hero]
+    #     - distance to nearest cover point
+    #     - health [Healer,Minion1,Minion2,Hero]
+
+    team = Mover.getTeam()
+    friends = Mover.world.getNPCsForTeam(team)
+    hero = None
+    for friend in friends:
+        if isinstance(friend,PlayerHero):
+            hero = friend
+    if hero:
+        if isinstance(Mover,MyHealer):
+            healer_values["playerHealth"] = np.float(hero.getHitpoints())/np.float(hero.getMaxHitpoints())
+            healer_values["playerDistance"] = distance(hero.position,Mover.position)
+        else:
+            healer_values["playerHealth"] = None
+            healer_values["playerDistance"] = None
+    else:
+        healer_values["playerHealth"] = None
+        healer_values["playerDistance"] = None
+
+    barkState[0] = healer_values
+    barkState[1] = minion_1_values
+    barkState[2] = minion_2_values
+    ###########################################################
+    return barkState
 
 class Barker():
+    def __init__(self):
+        self.barkState = None
     def bark(self):
+        self.barkState = BarkContext(self)
         pass
 
     def hearBark(self, thebark):
+        self.barkState = thebark
         pass
 
 
 ############################################
+
 
 class PlayerHero(Hero, Barker):
     def __init__(self, position, orientation, world, image=AGENT, speed=SPEED, viewangle=360, hitpoints=HEROHITPOINTS,
@@ -135,7 +290,7 @@ class PlayerHero(Hero, Barker):
         thebark = None
         ### Set thebark to whatever is the contextually relevant thing (probably a string)
         ### YOUR CODE GOES BELOW HERE ###
-
+        thebark = BarkContext(self)
         ### YOUR CODE GOES ABOVE HERE ###
         for n in self.world.getNPCsForTeam(self.getTeam()):
             if isinstance(n, Barker):
@@ -150,10 +305,13 @@ class Healer(MOBAAgent, Barker):
                  firerate=FIRERATE, bulletclass=SmallBullet, healrate=HEALRATE,dodgerate = DODGERATE, areaeffectrate = AREAEFFECTRATE, areaeffectdamage = AREAEFFECTDAMAGE):
         MOBAAgent.__init__(self, position, orientation, world, image, speed, viewangle, hitpoints, firerate,
                            bulletclass)
+        ### Added timers and such to enable AOE Healing
         self.healRate = healrate
         self.healTimer = 0
         self.canHeal = True
-
+        self.minionTarget = None
+        self.minionTargetLocation = None
+        self.myHero = None
         self.dodgeRate = dodgerate
         self.dodgeTimer = 0
         self.candodge = True
@@ -161,6 +319,8 @@ class Healer(MOBAAgent, Barker):
         self.areaEffectRate = areaeffectrate
         self.areaEffectDamage = areaeffectdamage
         self.areaEffectTimer = 0
+        self.getHero()
+
 
     def die(self):
         MOBAAgent.die(self)
@@ -173,16 +333,20 @@ class Healer(MOBAAgent, Barker):
 
     def update(self, delta=0):
         MOBAAgent.update(self, delta)
+
+        #region Healing
         if self.canHeal == False:
             self.healTimer = self.healTimer + 1
             if self.healTimer >= self.healRate:
                 self.canHeal = True
                 self.healTimer = 0
+        # Added the ability to dodge
         if self.candodge == False:
             self.dodgeTimer = self.dodgeTimer + 1
             if self.dodgeTimer >= self.dodgeRate:
                 self.candodge = True
                 self.dodgeTimer = 0
+        # Added the ability to AOE Heal
         if self.canareaeffectheal == False:
             self.areaEffectTimer = self.areaEffectTimer + 1
             if self.areaEffectTimer >= self.areaEffectRate:
@@ -209,6 +373,14 @@ class Healer(MOBAAgent, Barker):
             return True
         return False
 
+    def getHero(self):
+        npc_list = self.world.getNPCsForTeam(self.getTeam())
+        hero = None
+        for npc in npc_list:
+            if isinstance(npc, PlayerHero):
+                self.myHero = npc
+                return None
+        return None
 
     def canDodge(self):
         return self.candodge
@@ -226,16 +398,38 @@ class MyHealer(Healer, BehaviorTree):
                         healrate)
         BehaviorTree.__init__(self)
         self.states = []
+        self.speed = (self.speed[0]*4.5,self.speed[1]*4.5)
         self.startState = None
         ### YOUR CODE GOES BELOW HERE ###
         self.team = self.getTeam()
-
+        self.justHeardBark = False
+        self.barkState = BarkContext(self)
         ### YOUR CODE GOES ABOVE HERE ###
+        self.nearestShadow = None
+
 
     def update(self, delta):
         Healer.update(self, delta)
         BehaviorTree.update(self, delta)
 
+        #region  Shadow Update
+        self.nearestShadow = sorted(self.world.shadowCentroids,key=lambda x: distance(x,self.position))[0]
+        #endregion
+        # region testing
+        # nearest_shadow_grid = self.getNearestShadowGrid()
+        # nearest_cover_node_at_destination = self.getNearestCoverNode_AtPosition((100,100))
+        # nearest_cover_node = self.getNearestCoverNode()
+        # endregion
+
+    def getNearestShadowGrid(self):
+        return self.world.shadows[self.nearestShadow]
+    def getNearestCoverNode_AtPosition(self,destination):
+        relevant_shadow = sorted(self.world.shadowCentroids,key=lambda x: distance(x,self.position))[0]
+        shadow_grid = self.world.shadows[relevant_shadow]
+        nearest_node = sorted(shadow_grid,key=lambda x:distance(x,destination))[0]
+        return nearest_node
+    def getNearestCoverNode(self):
+        return self.getNearestCoverNode_AtPosition(self.position)
     def start(self):
         # Build the tree
         spec = healerTreeSpec(self)
@@ -249,21 +443,34 @@ class MyHealer(Healer, BehaviorTree):
         Healer.stop(self)
         BehaviorTree.stop(self)
 
+    def communicationBark(self,string):
+        print string
+    def calculateBarkString(self):
+        print "Companion Minion Barking!!!"
+        return None
+
     def bark(self):
         Barker.bark(self)
         ### YOUR CODE GOES BELOW HERE
-
+        self.calculateBarkString()
         ### YOUR CODE GOES ABOVE HERE
-
+    def calculateHeardBarkString(self):
+        print "Companion Minion Heard Bark!!!"
+        return None
     def hearBark(self, thebark):
         Barker.hearBark(self, thebark)
         ### YOUR CODE GOES BELOW HERE ###
+        self.justHeardBark = True
+        self.calculateHeardBarkString()
+
+        #region Below to be handled in behavior tree
         # pause beavhior tree?
-        self.stop()
+        #self.stop()
         # only goes to heal the healer if he barks at us
-        hero = self.world.agent
-        self.navigateTo(hero.getLocation())
-        self.heal(hero)
+        #hero = self.world.agent
+        #self.navigateTo(hero.getLocation())
+        #self.heal(hero)
+        #endregion
         ### YOUR CODE GOES ABOVE HERE ###
 
 
@@ -277,9 +484,13 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
                       dodgerate, areaeffectrate, areaeffectdamage)
         BehaviorTree.__init__(self)
         self.states = []
+        self.speed = (self.speed[0]*3,self.speed[1]*3)
         self.startState = None
         self.id = None
+        self.justHeardBark = False
+        self.barkState = BarkContext(self)
         ### YOUR CODE GOES BELOW HERE ###
+        self.nearestShadow =None
 
     def die(self):
         Hero.die(self)
@@ -294,18 +505,43 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
 
         ### YOUR CODE GOES ABOVE HERE ###
 
+
+    def calculateBarkString(self):
+        print "Companion Minion Barking!!!"
+        return None
+    def communicationBark(self,string):
+        print string
     def bark(self):
         Barker.bark(self)
         ### YOUR CODE GOES BELOW HERE
-
+        self.calculateBarkString()
         ### YOUR CODE GOES ABOVE HERE
 
     def update(self, delta):
         Hero.update(self, delta)
         BehaviorTree.update(self, delta)
 
+        # region  Shadow Update
+        self.nearestShadow = sorted(self.world.shadowCentroids, key=lambda x: distance(x, self.position))[0]
+        # endregion
+        # region testing
+        # nearest_shadow_grid = self.getNearestShadowGrid()
+        # nearest_cover_node_at_destination = self.getNearestCoverNode_AtPosition((100,100))
+        # nearest_cover_node = self.getNearestCoverNode()
+        # endregion
+
+    def getNearestShadowGrid(self):
+        return self.world.shadows[self.nearestShadow]
+    def getNearestCoverNode_AtPosition(self,destination):
+        relevant_shadow = sorted(self.world.shadowCentroids,key=lambda x: distance(x,self.position))[0]
+        shadow_grid = self.world.shadows[relevant_shadow]
+        nearest_node = sorted(shadow_grid,key=lambda x:distance(x,destination))[0]
+        return nearest_node
+    def getNearestCoverNode(self):
+        return self.getNearestCoverNode_AtPosition(self.position)
+
     def start(self):
-        # Build the tree
+        # Build the tree; ONLY USE SPECS, TREES SUCK
         spec = companionTreeSpec(self)
         if spec is not None and (isinstance(spec, list) or isinstance(spec, tuple)):
             self.buildTree(spec)
@@ -317,16 +553,27 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
         Hero.stop(self)
         BehaviorTree.stop(self)
 
+    def calculateBarkString(self):
+        print "Companion Minion Barking!!!"
+        return None
+
     def bark(self):
         Barker.bark(self)
         ### YOUR CODE GOES BELOW HERE
-
+        self.calculateBarkString()
         ### YOUR CODE GOES ABOVE HERE
+
+
+    def calculateHeardBarkString(self):
+        print "Companion Minion Heard Bark!!!"
+        return None
 
     def hearBark(self, thebark):
         Barker.hearBark(self, thebark)
-        ### YOUR CODE GOES BELOW HERE
-        ### YOUR CODE GOES ABOVE HERE
+        ### YOUR CODE GOES BELOW HERE ###
+        self.justHeardBark = True
+        self.calculateHeardBarkString()
+        ### YOUR CODE GOES ABOVE HERE ###
 
 
 ##########################################################
@@ -354,7 +601,40 @@ def healerTreeSpec(agent):
     myid = str(agent.getTeam())
     spec = None
     ### YOUR CODE GOES BELOW HERE ###
+    #TODO This is a place holder spec, we need one that actually heals!
     spec=[(AEDaemon,'AED'),(Formation)]
+
+    # spec = [Selector, [HealthDaemon, HealCompanion],[LeftSideDaemon, Formation], TacticalCover]
+    # spec = [Selector, [LeftSideDaemon, Formation]]  # , TacticalCover]
+    
+	
+	#### Chris: variables ####
+
+	# Lanssie, the variables: (these won't populate during the build tree process, since (I think) the build happens before the game starts.)
+    heard_bark = agent.justHeardBark
+    if heard_bark:
+        healer_barkContext = agent.barkState[agent.id]
+        playerHealth = healer_barkContext["playerHealth"]
+        playerDistance = healer_barkContext["playerDistance"]
+    # and to reset the bark state
+    agent.justHeardBark = False
+
+    ##########################
+
+
+	# LANSSIE STUFF
+    #hero = self.getHero(self.agent.world.getNPCsForTeam(self.agent.getTeam()))
+    # area of affect?
+
+    # spec = [(Selector, 'starting the healer'),
+    #             [(HealerBarkDaemon, playerHealth, distance_helaer_to_player, barkorder,'heard bark order'), #dogde
+    #                 [(Sequence, 'finding and healing hero sequence'), (FindTeammate, agent.myHero, 'finding hero'), (HealTeammate, agent.myHero, 'Healing Hero')]
+    #             ],
+    #             [(HealTeammateDaemon, 'regular healing'), #dodge
+    #                 [(Sequence, 'finding and healing teammate sequence'),(FindTeammate, agent.minionTarget, 'finding hero'), (HealTeammate, agent.minionTarget, 'Healing Hero')],
+    #             ],
+    #             (Formation, 'doing regular formation')
+    #         ]
     ### YOUR CODE GOES ABOVE HERE ###
     return spec
 
@@ -362,6 +642,7 @@ def companionTreeSpec(agent):
     myid = str(agent.getTeam())
     spec = None
     ### YOUR CODE GOES BELOW HERE ###
+    #TODO Finalize the specs that we want to toggle? between with barks
     '''
     # This spec is the Free Formation
     spec=[(DodgeDaemon,'DD'),[(AEDaemon,'AED'),\
@@ -481,41 +762,105 @@ class Formation(BTNode):
 
 # LANSSIE HEALER THINGS
 # FINDING COVER AS THE DEFAULT STATE OF BEING FOR HEALERS AND POSSIBLY OTHER MINIONS?
-class FindCover(BTNode):
+
+# DAEMONS GALORE
+
+class HealerBarkDaemon(BTNode):
+
     def parseArgs(self, args):
         BTNode.parseArgs(self, args)
         self.target = None
         self.timer = 50
         # First argument is the factor
         if len(args) > 0:
-            self.percentage = args[0]
+            self.playerHealth = args[0]
         # Second argument is the node ID
         if len(args) > 1:
-            self.id = args[1]
+            self.healerDistanceToPlayer = args[1]
+        if len(args) > 2:
+            self.bark = args[2]
+        if len(args) > 3:
+            self.id = args[3]        
 
-    def enter(self):
-        BTNode.enter(self)
-        # temporary go to base, but should go to nearest obstacle cover area
-        self.agent.navigateTo(self.agent.world.getBaseForTeam(self.agent.getTeam()).getLocation())
-
-    def execute(self):
+    def execute(self, delta=0):
         ret = BTNode.execute(self, delta)
-        # if self.agent.getHitpoints() > self.agent.getMaxHitpoints():
-        #     # fail executability conditions
-        #     print "exec", self.id, "false"
-        #     return False
-        # elif self.agent.getHitpoints() == self.agent.getMaxHitpoints():
-        #     # Exection succeeds
-        #     print "exec", self.id, "true"
-        #     print 'IM GOING TO RETREAT'
-        #     return True
-        # else:
-        #     # executing
-        #     return None
+        if self.playerHealth < .5 * HEROHITPOINTS and self.healerDistanceToPlayer < 150 and self.bark == True: 
+            return self.getChild(0).execute(delta)
+        else:
+            return False
         return ret
 
+class HealTeammateDaemon(BTNode):
+    ### HEALS IF WE CAN
 
-class HealClosestTeammate(BTNode):
+    def parseArgs(self, args):
+        BTNode.parseArgs(self, args)
+        self.advantage = 0
+        # First argument is the advantage
+        if len(args) > 0:
+            self.id = args[0]
+
+    def execute(self, delta=0):
+        ret = BTNode.execute(self, delta)
+        hero = None
+        # Get a reference to the enemy hero
+        team = self.agent.world.getNPCsForTeam(self.agent.getTeam())
+        print team 
+
+        to_heal = None
+        distance_away = []
+        i = 0
+        for teammate in team:
+            distance_away[i] = distance(teammate.getLocation(), self.agent.getLocation())
+            i += 1
+        to_heal = team[distance_away.index(min(distance_away))]
+        far_away = min(distance_away)
+
+        if to_heal != None and to_heal.isAlive() and far_away < 150 and to_heal. to_heal.getHitpoints() < .5*to_heal.getMaxHitpoints():
+            self.agent.minionTarget = to_heal
+            self.agent.minionTargetLocation = to_heal.getLocation()
+            return self.getChild(0).execute(delta)
+        else:
+            return False
+        return ret
+
+# REGULAR MF BAEHAVIORS
+
+# class FindCover(BTNode):
+#     def parseArgs(self, args):
+#         BTNode.parseArgs(self, args)
+#         self.target = None
+#         self.timer = 50
+#         # First argument is the factor
+#         if len(args) > 0:
+#             self.percentage = args[0]
+#         # Second argument is the node ID
+#         if len(args) > 1:
+#             self.id = args[1]
+
+#     def enter(self):
+#         BTNode.enter(self)
+#         # temporary go to base, but should go to nearest obstacle cover area
+#         self.agent.navigateTo(self.agent.world.getBaseForTeam(self.agent.getTeam()).getLocation())
+
+#     def execute(self):
+#         ret = BTNode.execute(self, delta)
+#         # if self.agent.getHitpoints() > self.agent.getMaxHitpoints():
+#         #     # fail executability conditions
+#         #     print "exec", self.id, "false"
+#         #     return False
+#         # elif self.agent.getHitpoints() == self.agent.getMaxHitpoints():
+#         #     # Exection succeeds
+#         #     print "exec", self.id, "true"
+#         #     print 'IM GOING TO RETREAT'
+#         #     return True
+#         # else:
+#         #     # executing
+#         #     return None
+#         return ret
+
+
+class HealTeammate(BTNode):
     ### target: the minion to chase
     ### timer: how often to replan
 
@@ -525,22 +870,55 @@ class HealClosestTeammate(BTNode):
         self.timer = 50
         # First argument is the node ID
         if len(args) > 0:
-            self.id = args[0]
+            self.target = args[0]
+        if len(args) > 1:
+            self.id = args[1]
+
+    def enter(self):
+        return None
+
+    def execute(self, delta=0):
+        ret = BTNode.execute(self, delta)
+        if self.target == None or self.target.isAlive() == False:
+            # failed execution conditions
+            print "exec", self.id, "false"
+            return False
+        else:
+            self.agent.heal(self.target)
+            # return True
+        return ret
+
+
+
+##################
+### FINDTEAMMATE
+###
+### Find the closest minion and move to intercept it.
+### Parameters:
+###   0: node ID string (optional)
+
+
+class FindTeammate(BTNode):
+    ### target: the minion to chase
+    ### timer: how often to replan
+
+    def parseArgs(self, args):
+        BTNode.parseArgs(self, args)
+        self.target = None
+        self.timer = 50
+        # First argument is the node ID
+        if len(args) > 0:
+            self.hero = args[0]
+        if len(args) > 1:
+            self.id = args[1]
 
     def enter(self):
         BTNode.enter(self)
         self.timer = 50
-        team = self.agent.world.getNPCsForTeam(self.agent.getTeam())
-        if len(team) > 0:
-            best = None
-            HP = 0
-            for e in team:
-                if isinstance(e, Minion):
-                    hp = e.getHitpoints()
-                    if best == None or HP > hp:
-                        best = e
-                        HP = hp
-            self.target = best
+        if self.hero != self.agent.minionTarget: #should expect a hero if from other branch. should expect minion if passed through the daemon successfully.
+            self.target = self.hero
+        else:
+            self.target = self.agent.minionTarget
         if self.target is not None:
             navTarget = self.chooseNavigationTarget()
             if navTarget is not None:
@@ -552,11 +930,10 @@ class HealClosestTeammate(BTNode):
             # failed execution conditions
             print "exec", self.id, "false"
             return False
-        # elif distance(self.agent.getLocation(), self.target.getLocation()) < BIGBULLETRANGE:
-        #     # succeeded
-        #     print 'IM FINDING TEAM NOW'
-        #     print "exec", self.id, "true"
-        #     return True
+        elif distance(self.agent.getLocation(), self.target.getLocation()) < 1:
+            # succeeded
+            print "exec", self.id, "true"
+            return True
         else:
             # executing
             self.timer = self.timer - 1
@@ -573,33 +950,6 @@ class HealClosestTeammate(BTNode):
             return self.target.getLocation()
         else:
             return None
-
-
-class HealerDaemon(BTNode):
-    ### HEALS IF WE CAN
-
-    def parseArgs(self, args):
-        BTNode.parseArgs(self, args)
-        self.advantage = 0
-        # First argument is the advantage
-        if len(args) > 0:
-            self.id = args[0]
-
-    def execute(self, delta=0):
-        ret = BTNode.execute(self, delta)
-        hero = None
-        # Get a reference to the enemy hero
-        enemies = self.agent.world.getEnemyNPCs(self.agent.getTeam())
-
-        if self.canHeal:
-            return self.getChild(0).execute(delta)
-        else:
-            # check if timer is < time it takes to get to the player?
-            return False
-            # Check didn't fail, return child's status
-            # return self.getChild(0).execute(delta)
-        return ret
-
 
 ###############################
 ### BEHAVIOR CLASSES FROM IAN:
