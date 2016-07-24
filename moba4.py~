@@ -246,10 +246,28 @@ class Hero(MOBAAgent):
         companion1_vector = rotateVector(self.node_vectors[1], self.orientation)
         companion2_vector = rotateVector(self.node_vectors[2], self.orientation)
 
+        enemies = self.world.getEnemyNPCs(self.getTeam())+self.world.getEnemyTowers(self.getTeam())+self.world.getEnemyBases(self.getTeam())
+        if enemies:
+            dist=float('Inf')
+            target=None
+            for e in enemies:
+                d=distance(self.getLocation(),e.getLocation())
+                if d<dist:
+                    dist=d
+                    target=e.getLocation()
+            angle = math.degrees(numpy.arctan2(self.getLocation()[0]-target[0],self.getLocation()[1]-target[1]))-90
+            healer_vector = rotateVector(self.node_vectors[0], angle)
+            companion1_vector = rotateVector(self.node_vectors[1], angle)
+            companion2_vector = rotateVector(self.node_vectors[2], angle)
+
+
         # 2: move vectors to player position
         healer_vector = self.position[0]+healer_vector[0],self.position[1]+healer_vector[1]
         companion1_vector = self.position[0]+companion1_vector[0],self.position[1]+companion1_vector[1]
         companion2_vector = self.position[0]+companion2_vector[0],self.position[1]+companion2_vector[1]
+
+        
+            
 
         self.nodes = [healer_vector, companion1_vector, companion2_vector]
 
@@ -622,10 +640,11 @@ class MOBAWorld(GatedWorld):
 
     def doKeyDown(self, key):
         GatedWorld.doKeyDown(self, key)
-        if key == 106: #'j'
+        keys=pygame.key.get_pressed()
+        if keys[K_LSHIFT]:
             if isinstance(self.agent, Hero):
                 self.agent.dodge()
-        elif key == 97: #'a'
+        if keys[K_SPACE]:
             if isinstance(self.agent, Hero):
                 self.agent.areaEffect()
 
