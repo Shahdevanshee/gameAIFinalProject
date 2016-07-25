@@ -213,8 +213,8 @@ for loc in weenies:
 # This is the shadows and cover node entry point#
 #################################################
 
-#world.getStationaryShooterShadowParams()
-#world.getShadows_final()
+world.getStationaryShooterShadowParams()
+world.getShadows_final()
 #region Old Shadow Function Calls
 #world.getBaseShadows()
 #world.getCoverNodes()
