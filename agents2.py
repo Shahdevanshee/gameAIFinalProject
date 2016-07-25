@@ -212,14 +212,14 @@ class MOBAWorld2(MOBAWorld):
         #    drawCross(self.background, point, color=(0, 255, 0), size=15, width=4)
         #    drawCross(self.background, (100, 100), color=(0, 255, 0))
 
-        for shadow_centroid in self.shadowCentroids:
-            cover_nodes = self.shadows[shadow_centroid]
-            for node in cover_nodes:
-                drawCross(self.background,node,color=(75,150,150),size=5,width = 4)
+        # for shadow_centroid in self.shadowCentroids:
+        #     cover_nodes = self.shadows[shadow_centroid]
+        #     for node in cover_nodes:
+        #         drawCross(self.background,node,color=(75,150,150),size=5,width = 4)
 
 
 #############################################
-def BarkContext(Mover):
+def BarkContext_original(Mover,previous_state = None):
     barkState = {}
     healer_values = {}
     minion_1_values = {}
@@ -253,16 +253,78 @@ def BarkContext(Mover):
     barkState[2] = minion_2_values
     ###########################################################
     return barkState
+def BarkContext(character, previous_state=None):
+    #placeholder: should be deleted
+    barkState = {}
+    companion_state_toggle = ["formation","attack"]
+
+    #region Populate with defaults if none
+    if previous_state == None:
+        barkState = {}
+        healer_defaults = {}
+        healer_defaults["playerHealth"] = None
+        healer_defaults["playerDistance"] = None
+
+        companion1_defaults = {}
+        companion2_defaults = {}
+
+        companion1_defaults["states"] = ["formation","attack"]
+        companion2_defaults["states"] = ["formation","attack"]
+
+        companion1_defaults["currentStateIndex"] = 0
+        companion2_defaults["currentStateIndex"] = 0
+
+        companion1_defaults["state"] = companion1_defaults["states"][companion1_defaults["currentStateIndex"]]
+        companion2_defaults["state"] = companion2_defaults["states"][companion2_defaults["currentStateIndex"]]
+
+
+        hero_defaults = {}
+
+        barkState[0] = healer_defaults
+        barkState[1] = companion1_defaults
+        barkState[2] = companion2_defaults
+        barkState[3] = hero_defaults
+        return barkState
+    #endregion
+
+    # barkState = previous_state.copy()
+
+    #region Update Hero-relevant stuff
+    #endregion
+
+    #region Update Healer-relevant stuff
+    # below could be streamlined
+
+    if isinstance(character, MyHealer):
+        team = character.getTeam()
+        friends = character.world.getNPCsForTeam(team)
+        hero = None
+        for friend in friends:
+            if isinstance(friend,PlayerHero):
+                hero = friend
+        if hero:
+            barkState[character.id]["playerHealth"] = np.float(hero.getHitpoints())/np.float(hero.getMaxHitpoints())
+            barkState[character.id]["playerDistance"] = distance(hero.position,Mover.position)
+    #endregion
+
+    #region Update Companion-relevant stuff
+    if isinstance(character,MyCompanionHero):
+        current_state_index = barkState[character.id]["currentStateIndex"]
+        if current_state_index == 0:
+            barkState[character.id]["currentStateIndex"] = 1
+        else:
+            barkState[character.id]["currentStateIndex"] = 0
+        barkState[character.id]["state"] = barkState[character.id]["states"][barkState[character.id]["currentStateIndex"]]
+    #endregion
+    return barkState
 
 class Barker():
     def __init__(self):
-        self.barkState = None
-    def bark(self):
         self.barkState = BarkContext(self)
+    def bark(self):
         pass
 
     def hearBark(self, thebark):
-        self.barkState = thebark
         pass
 
 
@@ -402,10 +464,15 @@ class MyHealer(Healer, BehaviorTree):
         self.startState = None
         ### YOUR CODE GOES BELOW HERE ###
         self.team = self.getTeam()
+
         self.justHeardBark = False
+        self.executingBark = False
+
+
         self.barkState = BarkContext(self)
         ### YOUR CODE GOES ABOVE HERE ###
         self.nearestShadow = None
+
 
 
     def update(self, delta):
@@ -413,7 +480,9 @@ class MyHealer(Healer, BehaviorTree):
         BehaviorTree.update(self, delta)
 
         #region  Shadow Update
-        self.nearestShadow = sorted(self.world.shadowCentroids,key=lambda x: distance(x,self.position))[0]
+        #self.nearestShadow = sorted(self.world.shadowCentroids,key=lambda x: distance(x,self.position))[0]
+
+
         #endregion
         # region testing
         # nearest_shadow_grid = self.getNearestShadowGrid()
@@ -451,6 +520,7 @@ class MyHealer(Healer, BehaviorTree):
 
     def bark(self):
         Barker.bark(self)
+        self.barkState = BarkContext(self,previous_state=self.barkState)
         ### YOUR CODE GOES BELOW HERE
         self.calculateBarkString()
         ### YOUR CODE GOES ABOVE HERE
@@ -459,6 +529,7 @@ class MyHealer(Healer, BehaviorTree):
         return None
     def hearBark(self, thebark):
         Barker.hearBark(self, thebark)
+        self.barkState = BarkContext(self,previous_state=self.barkState)
         ### YOUR CODE GOES BELOW HERE ###
         self.justHeardBark = True
         self.calculateHeardBarkString()
@@ -514,15 +585,31 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
     def bark(self):
         Barker.bark(self)
         ### YOUR CODE GOES BELOW HERE
+        self.barkState = BarkContext(self,previous_state = self.barkState)
         self.calculateBarkString()
         ### YOUR CODE GOES ABOVE HERE
+
+    def calculateHeardBarkString(self):
+        print "Companion Minion Heard Bark!!!"
+        return None
+
+    def hearBark(self, thebark):
+        Barker.hearBark(self, thebark)
+        ### YOUR CODE GOES BELOW HERE ###
+        self.justHeardBark = True
+        self.barkState = BarkContext(self,previous_state = self.barkState)
+        self.calculateHeardBarkString()
+        ### YOUR CODE GOES ABOVE HERE ###
 
     def update(self, delta):
         Hero.update(self, delta)
         BehaviorTree.update(self, delta)
 
         # region  Shadow Update
-        self.nearestShadow = sorted(self.world.shadowCentroids, key=lambda x: distance(x, self.position))[0]
+        #self.nearestShadow = sorted(self.world.shadowCentroids, key=lambda x: distance(x, self.position))[0]
+
+
+
         # endregion
         # region testing
         # nearest_shadow_grid = self.getNearestShadowGrid()
@@ -552,28 +639,6 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
     def stop(self):
         Hero.stop(self)
         BehaviorTree.stop(self)
-
-    def calculateBarkString(self):
-        print "Companion Minion Barking!!!"
-        return None
-
-    def bark(self):
-        Barker.bark(self)
-        ### YOUR CODE GOES BELOW HERE
-        self.calculateBarkString()
-        ### YOUR CODE GOES ABOVE HERE
-
-
-    def calculateHeardBarkString(self):
-        print "Companion Minion Heard Bark!!!"
-        return None
-
-    def hearBark(self, thebark):
-        Barker.hearBark(self, thebark)
-        ### YOUR CODE GOES BELOW HERE ###
-        self.justHeardBark = True
-        self.calculateHeardBarkString()
-        ### YOUR CODE GOES ABOVE HERE ###
 
 
 ##########################################################
@@ -784,6 +849,26 @@ class HealerBarkDaemon(BTNode):
 
     def execute(self, delta=0):
         ret = BTNode.execute(self, delta)
+
+        #### Chris Add on For Bark "Logic"
+        # if self.agent.justHeardBark == True or self.agent.executingBark == True:
+        #     self.agent.justHeardBark = False
+        #
+        #     player_health = self.agent.barkState[self.id]["playerHealth"]
+        #     player_distance = self.agent.barkState[self.id]["playerDistance"]
+        #     if player_health < .5 * HEROHITPOINTS and player_distance < 150:
+        #         self.agent.executingBark = True
+        #         return self.getChild(0).execute(delta)
+        #     else:
+        #         self.agent.executingBark = False
+        # else:
+        #     Double check this logic.  Not sure it will work as expected
+            # self.agent.executingBark = False
+            # self.agent.justHeardBark = False
+        ####
+
+
+
         if self.playerHealth < .5 * HEROHITPOINTS and self.healerDistanceToPlayer < 150 and self.bark == True: 
             return self.getChild(0).execute(delta)
         else:
