@@ -212,10 +212,10 @@ class MOBAWorld2(MOBAWorld):
         #    drawCross(self.background, point, color=(0, 255, 0), size=15, width=4)
         #    drawCross(self.background, (100, 100), color=(0, 255, 0))
 
-        # for shadow_centroid in self.shadowCentroids:
-        #     cover_nodes = self.shadows[shadow_centroid]
-        #     for node in cover_nodes:
-        #         drawCross(self.background,node,color=(75,150,150),size=5,width = 4)
+        for shadow_centroid in self.shadowCentroids:
+            cover_nodes = self.shadows[shadow_centroid]
+            for node in cover_nodes:
+                drawCross(self.background,node,color=(75,150,150),size=5,width = 4)
 
 
 #############################################
@@ -470,6 +470,7 @@ class MyHealer(Healer, BehaviorTree):
 
 
         self.barkState = BarkContext(self)
+        self.executingBark = False
         ### YOUR CODE GOES ABOVE HERE ###
         self.nearestShadow = None
 
@@ -480,9 +481,7 @@ class MyHealer(Healer, BehaviorTree):
         BehaviorTree.update(self, delta)
 
         #region  Shadow Update
-        #self.nearestShadow = sorted(self.world.shadowCentroids,key=lambda x: distance(x,self.position))[0]
-
-
+        self.nearestShadow = sorted(self.world.shadowCentroids,key=lambda x: distance(x,self.position))[0]
         #endregion
         # region testing
         # nearest_shadow_grid = self.getNearestShadowGrid()
@@ -667,7 +666,7 @@ def healerTreeSpec(agent):
     spec = None
     ### YOUR CODE GOES BELOW HERE ###
     #TODO This is a place holder spec, we need one that actually heals!
-    spec=[(AEDaemon,'AED'),(Formation)]
+    # spec=[(AEDaemon,'AED'),(Formation)]
 
     # spec = [Selector, [HealthDaemon, HealCompanion],[LeftSideDaemon, Formation], TacticalCover]
     # spec = [Selector, [LeftSideDaemon, Formation]]  # , TacticalCover]
@@ -676,13 +675,13 @@ def healerTreeSpec(agent):
 	#### Chris: variables ####
 
 	# Lanssie, the variables: (these won't populate during the build tree process, since (I think) the build happens before the game starts.)
-    heard_bark = agent.justHeardBark
-    if heard_bark:
-        healer_barkContext = agent.barkState[agent.id]
-        playerHealth = healer_barkContext["playerHealth"]
-        playerDistance = healer_barkContext["playerDistance"]
-    # and to reset the bark state
-    agent.justHeardBark = False
+    # heard_bark = agent.justHeardBark
+    # if heard_bark:
+    #     healer_barkContext = agent.barkState[agent.id]
+    #     playerHealth = healer_barkContext["playerHealth"]
+    #     playerDistance = healer_barkContext["playerDistance"]
+    # # and to reset the bark state
+    # agent.justHeardBark = False
 
     ##########################
 
@@ -691,15 +690,15 @@ def healerTreeSpec(agent):
     #hero = self.getHero(self.agent.world.getNPCsForTeam(self.agent.getTeam()))
     # area of affect?
 
-    # spec = [(Selector, 'starting the healer'),
-    #             [(HealerBarkDaemon, playerHealth, distance_helaer_to_player, barkorder,'heard bark order'), #dogde
-    #                 [(Sequence, 'finding and healing hero sequence'), (FindTeammate, agent.myHero, 'finding hero'), (HealTeammate, agent.myHero, 'Healing Hero')]
-    #             ],
-    #             [(HealTeammateDaemon, 'regular healing'), #dodge
-    #                 [(Sequence, 'finding and healing teammate sequence'),(FindTeammate, agent.minionTarget, 'finding hero'), (HealTeammate, agent.minionTarget, 'Healing Hero')],
-    #             ],
-    #             (Formation, 'doing regular formation')
-    #         ]
+    spec = [(Selector, 'starting the healer'),
+                [(HealerBarkDaemon,'heard bark order'), #dogde
+                    [(Sequence, 'finding and healing hero sequence'), (FindTeammate, agent.myHero, 'finding hero'), (HealTeammate, agent.myHero, 'Healing Hero')]
+                ],
+                [(HealTeammateDaemon, 'regular healing'), #dodge
+                    [(Sequence, 'finding and healing teammate sequence'),(FindTeammate, agent.minionTarget, 'finding hero'), (HealTeammate, agent.minionTarget, 'Healing Hero')],
+                ],
+                (Formation, 'doing regular formation')
+            ]
     ### YOUR CODE GOES ABOVE HERE ###
     return spec
 
@@ -838,42 +837,45 @@ class HealerBarkDaemon(BTNode):
         self.timer = 50
         # First argument is the factor
         if len(args) > 0:
-            self.playerHealth = args[0]
-        # Second argument is the node ID
-        if len(args) > 1:
-            self.healerDistanceToPlayer = args[1]
-        if len(args) > 2:
-            self.bark = args[2]
-        if len(args) > 3:
-            self.id = args[3]        
+        #     self.playerHealth = args[0]
+        # # Second argument is the node ID
+        # if len(args) > 1:
+        #     self.healerDistanceToPlayer = args[1]
+        # if len(args) > 2:
+        #     self.bark = args[2]
+        # if len(args) > 3:
+            self.id = args[0]        
 
     def execute(self, delta=0):
         ret = BTNode.execute(self, delta)
+		
+		# if self.playerHealth < .5 * HEROHITPOINTS and self.healerDistanceToPlayer < 150 and self.bark == True: 
+        #     return self.getChild(0).execute(delta)
+        # else:
+        #     return False
+        # return ret
+
 
         #### Chris Add on For Bark "Logic"
-        # if self.agent.justHeardBark == True or self.agent.executingBark == True:
-        #     self.agent.justHeardBark = False
-        #
-        #     player_health = self.agent.barkState[self.id]["playerHealth"]
-        #     player_distance = self.agent.barkState[self.id]["playerDistance"]
-        #     if player_health < .5 * HEROHITPOINTS and player_distance < 150:
-        #         self.agent.executingBark = True
-        #         return self.getChild(0).execute(delta)
-        #     else:
-        #         self.agent.executingBark = False
-        # else:
-        #     Double check this logic.  Not sure it will work as expected
-            # self.agent.executingBark = False
-            # self.agent.justHeardBark = False
+        if self.agent.justHeardBark == True or self.agent.executingBark == True:
+            self.agent.justHeardBark = False
+            
+            player_health = self.agent.barkState[self.id]["playerHealth"]
+            player_distance = self.agent.barkState[self.id]["playerDistance"]
+            if player_health < .5 * HEROHITPOINTS and player_distance < 150: 
+                self.agent.executingBark = True
+                return self.getChild(0).execute(delta)
+            else: 
+                self.agent.executingBark = False
+                return False
+        else:
+            # Double check this logic.  Not sure it will work as expected
+            self.agent.executingBark = False
+            self.agent.justHeardBark = False
+            return False
+		return ret
         ####
 
-
-
-        if self.playerHealth < .5 * HEROHITPOINTS and self.healerDistanceToPlayer < 150 and self.bark == True: 
-            return self.getChild(0).execute(delta)
-        else:
-            return False
-        return ret
 
 class HealTeammateDaemon(BTNode):
     ### HEALS IF WE CAN
@@ -893,57 +895,23 @@ class HealTeammateDaemon(BTNode):
         print team 
 
         to_heal = None
-        distance_away = []
-        i = 0
-        for teammate in team:
-            distance_away[i] = distance(teammate.getLocation(), self.agent.getLocation())
-            i += 1
-        to_heal = team[distance_away.index(min(distance_away))]
-        far_away = min(distance_away)
+        distance_away = {} #key = teammate, value = distance
 
-        if to_heal != None and to_heal.isAlive() and far_away < 150 and to_heal. to_heal.getHitpoints() < .5*to_heal.getMaxHitpoints():
-            self.agent.minionTarget = to_heal
-            self.agent.minionTargetLocation = to_heal.getLocation()
+        for teammate in team:
+            if teammate != self.agent and teammate != self.agent.myHero:
+                distance_away[teammate] = distance(teammate.getLocation(), self.agent.getLocation())
+        print distance_away
+        min_to_heal = min(distance_away, key=distance_away.get)
+        print to_heal
+        min_dist = min(distance_away)
+
+        if min_to_heal != None and min_to_heal.isAlive() and min_dist < 150 and min_to_heal.getHitpoints() < .5*min_to_heal.getMaxHitpoints():
+            self.agent.minionTarget = min_to_heal
+            self.agent.minionTargetLocation = min_to_heal.getLocation()
             return self.getChild(0).execute(delta)
         else:
             return False
         return ret
-
-# REGULAR MF BAEHAVIORS
-
-# class FindCover(BTNode):
-#     def parseArgs(self, args):
-#         BTNode.parseArgs(self, args)
-#         self.target = None
-#         self.timer = 50
-#         # First argument is the factor
-#         if len(args) > 0:
-#             self.percentage = args[0]
-#         # Second argument is the node ID
-#         if len(args) > 1:
-#             self.id = args[1]
-
-#     def enter(self):
-#         BTNode.enter(self)
-#         # temporary go to base, but should go to nearest obstacle cover area
-#         self.agent.navigateTo(self.agent.world.getBaseForTeam(self.agent.getTeam()).getLocation())
-
-#     def execute(self):
-#         ret = BTNode.execute(self, delta)
-#         # if self.agent.getHitpoints() > self.agent.getMaxHitpoints():
-#         #     # fail executability conditions
-#         #     print "exec", self.id, "false"
-#         #     return False
-#         # elif self.agent.getHitpoints() == self.agent.getMaxHitpoints():
-#         #     # Exection succeeds
-#         #     print "exec", self.id, "true"
-#         #     print 'IM GOING TO RETREAT'
-#         #     return True
-#         # else:
-#         #     # executing
-#         #     return None
-#         return ret
-
 
 class HealTeammate(BTNode):
     ### target: the minion to chase
@@ -1000,6 +968,7 @@ class FindTeammate(BTNode):
     def enter(self):
         BTNode.enter(self)
         self.timer = 50
+        
         if self.hero != self.agent.minionTarget: #should expect a hero if from other branch. should expect minion if passed through the daemon successfully.
             self.target = self.hero
         else:
