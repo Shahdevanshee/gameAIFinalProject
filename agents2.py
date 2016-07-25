@@ -873,7 +873,7 @@ class HealerBarkDaemon(BTNode):
             self.agent.executingBark = False
             self.agent.justHeardBark = False
             return False
-		return ret
+        return ret
         ####
 
 
