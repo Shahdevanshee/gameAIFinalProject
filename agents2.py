@@ -165,6 +165,7 @@ class MOBAWorld2(MOBAWorld):
         shadows = {}
 
         obstacles = self.getObstacles()
+        #obstacles = [self.getObstacles()[0]]
         for obstacle in obstacles:
             cover_grid = []
             for point in grid:

@@ -30,7 +30,7 @@ from SquadBaselineMinion import *
 from SquadBaselineHero import *
 
 # debugging
-enable_shadows = False
+enable_shadows = True
 
 ############################
 ### SET UP WORLD

@@ -261,15 +261,53 @@ class Hero(MOBAAgent):
             companion2_vector = rotateVector(self.node_vectors[2], angle)
 
 
-        # 2: move vectors to player position
-        healer_vector = self.position[0]+healer_vector[0],self.position[1]+healer_vector[1]
-        companion1_vector = self.position[0]+companion1_vector[0],self.position[1]+companion1_vector[1]
-        companion2_vector = self.position[0]+companion2_vector[0],self.position[1]+companion2_vector[1]
 
         
             
 
-        self.nodes = [healer_vector, companion1_vector, companion2_vector]
+
+        # closest cover nodes
+        if self.world.useShadows:
+            sorted_shadows = sorted(self.world.shadowCentroids,key=lambda x: distance(x,self.position))
+            self.nearestShadow = sorted_shadows[0]
+            self.nextNearestShadow = sorted_shadows[1]
+            cover_nodes = sorted(self.world.shadows[self.nearestShadow],key=lambda x:distance(x,self.position))
+            if distance(self.position,cover_nodes[2]) < 100:
+                healer_node = cover_nodes[2]
+
+                c1_vector_prime = companion1_vector[0] - healer_vector[0],companion1_vector[1] - healer_vector[1]
+                c2_vector_prime = companion2_vector[0] - healer_vector[0],companion2_vector[1] - healer_vector[1]
+
+
+                companion1_node = healer_node[0] + c1_vector_prime[0],healer_node[1] + c1_vector_prime[1]
+                companion2_node = healer_node[0] + c2_vector_prime[0],healer_node[1] + c2_vector_prime[1]
+                self.nodes=[cover_nodes[2],companion1_node,companion2_node]
+            else:
+                cover_nodes = sorted(self.world.shadows[self.nextNearestShadow],key=lambda x:distance(x,self.position))
+                if distance(self.position,cover_nodes[2]) < 100:
+                    healer_node = cover_nodes[2]
+
+                    c1_vector_prime = companion1_vector[0] - healer_vector[0], companion1_vector[1] - healer_vector[1]
+                    c2_vector_prime = companion2_vector[0] - healer_vector[0], companion2_vector[1] - healer_vector[1]
+
+                    companion1_node = healer_node[0] + c1_vector_prime[0], healer_node[1] + c1_vector_prime[1]
+                    companion2_node = healer_node[0] + c2_vector_prime[0], healer_node[1] + c2_vector_prime[1]
+                    self.nodes = [cover_nodes[2], companion1_node, companion2_node]
+                else:
+                    # 2: move vectors to player position
+                    healer_vector = self.position[0] + healer_vector[0], self.position[1] + healer_vector[1]
+                    companion1_vector = self.position[0] + companion1_vector[0], self.position[1] + companion1_vector[1]
+                    companion2_vector = self.position[0] + companion2_vector[0], self.position[1] + companion2_vector[1]
+                    self.nodes = [healer_vector, companion1_vector, companion2_vector]
+        else:
+            # 2: move vectors to player position
+            healer_vector = self.position[0] + healer_vector[0], self.position[1] + healer_vector[1]
+            companion1_vector = self.position[0] + companion1_vector[0], self.position[1] + companion1_vector[1]
+            companion2_vector = self.position[0] + companion2_vector[0], self.position[1] + companion2_vector[1]
+            self.nodes = [healer_vector, companion1_vector, companion2_vector]
+
+
+        # Finally, make sure there are no collisions with obstacles
 
 
     def dodge(self, angle = None):
