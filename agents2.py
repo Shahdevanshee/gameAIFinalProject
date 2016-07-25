@@ -212,10 +212,12 @@ class MOBAWorld2(MOBAWorld):
         #    drawCross(self.background, point, color=(0, 255, 0), size=15, width=4)
         #    drawCross(self.background, (100, 100), color=(0, 255, 0))
 
-        for shadow_centroid in self.shadowCentroids:
-            cover_nodes = self.shadows[shadow_centroid]
-            for node in cover_nodes:
-                drawCross(self.background,node,color=(75,150,150),size=5,width = 4)
+        ''' shadow nodes '''
+        if self.useShadows:
+            for shadow_centroid in self.shadowCentroids:
+                cover_nodes = self.shadows[shadow_centroid]
+                for node in cover_nodes:
+                    drawCross(self.background,node,color=(75,150,150),size=5,width = 4)
 
 
 #############################################
@@ -295,6 +297,8 @@ def BarkContext(character, previous_state=None):
     #region Update Healer-relevant stuff
     # below could be streamlined
 
+    barkState = previous_state.copy()
+
     if isinstance(character, MyHealer):
         team = character.getTeam()
         friends = character.world.getNPCsForTeam(team)
@@ -304,7 +308,7 @@ def BarkContext(character, previous_state=None):
                 hero = friend
         if hero:
             barkState[character.id]["playerHealth"] = np.float(hero.getHitpoints())/np.float(hero.getMaxHitpoints())
-            barkState[character.id]["playerDistance"] = distance(hero.position,Mover.position)
+            barkState[character.id]["playerDistance"] = distance(hero.position,character.position)
     #endregion
 
     #region Update Companion-relevant stuff
@@ -480,8 +484,12 @@ class MyHealer(Healer, BehaviorTree):
         Healer.update(self, delta)
         BehaviorTree.update(self, delta)
 
-        #region  Shadow Update
-        self.nearestShadow = sorted(self.world.shadowCentroids,key=lambda x: distance(x,self.position))[0]
+        #region  Shadow Update--uncomment for shadows
+        if self.world.useShadows:
+            self.nearestShadow = sorted(self.world.shadowCentroids,key=lambda x: distance(x,self.position))[0]
+
+
+
         #endregion
         # region testing
         # nearest_shadow_grid = self.getNearestShadowGrid()
@@ -525,6 +533,8 @@ class MyHealer(Healer, BehaviorTree):
         ### YOUR CODE GOES ABOVE HERE
     def calculateHeardBarkString(self):
         print "Companion Minion Heard Bark!!!"
+        self.barkState = BarkContext(self,previous_state = self.barkState)
+        self.calculateBarkString()
         return None
     def hearBark(self, thebark):
         Barker.hearBark(self, thebark)
@@ -577,7 +587,10 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
 
 
     def calculateBarkString(self):
-        print "Companion Minion Barking!!!"
+        if self.barkState[self.id]["state"] == "formation":
+            print "Taking Position!!!"
+        if self.barkState[self.id]["state"] == "attack":
+            print "Engaging the Enemy!!!"
         return None
     def communicationBark(self,string):
         print string
@@ -590,6 +603,7 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
 
     def calculateHeardBarkString(self):
         print "Companion Minion Heard Bark!!!"
+        self.calculateBarkString()
         return None
 
     def hearBark(self, thebark):
@@ -605,7 +619,8 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
         BehaviorTree.update(self, delta)
 
         # region  Shadow Update
-        #self.nearestShadow = sorted(self.world.shadowCentroids, key=lambda x: distance(x, self.position))[0]
+        if self.world.useShadows:
+            self.nearestShadow = sorted(self.world.shadowCentroids, key=lambda x: distance(x, self.position))[0]
 
 
 
@@ -707,6 +722,16 @@ def companionTreeSpec(agent):
     spec = None
     ### YOUR CODE GOES BELOW HERE ###
     #TODO Finalize the specs that we want to toggle? between with barks
+
+    # Formation Daemon
+    formation_daemon = CompanionFormationDaemon
+    # Attack Daemon
+    attack_daemon = CompanionAttackDaemon
+
+    # Toggles upon bark
+
+
+
     '''
     # This spec is the Free Formation
     spec=[(DodgeDaemon,'DD'),[(AEDaemon,'AED'),\
@@ -739,6 +764,40 @@ def makeNode(type, agent, *args):
 
 ##########################################################
 ### YOUR STATES AND BEHAVIORS GO HERE
+class CompanionFormationDaemon(BTNode):
+    def parseArgs(self,args):
+        BTNode.parseArgs(self,args)
+    def execute(self,delta=0):
+        ret = BTNode.execute(self,delta)
+
+        condition = self.agent.barkState[self.agent.id]["state"] == "formation"
+        if condition:
+            return self.getChild(0).execute(delta)
+        else:
+            return False
+
+
+        # Any idea why the original daemons were structured this way?
+        # Are we breaking anything by not reaching this line?
+        return ret
+
+
+class CompanionAttackDaemon(BTNode):
+    def parseArgs(self, args):
+        BTNode.parseArgs(self, args)
+
+    def execute(self, delta=0):
+        ret = BTNode.execute(self,delta)
+
+        condition = self.agent.barkState[self.agent.id]["state"] == "attack"
+        if condition:
+            return self.getChild(0).execute(delta)
+        else:
+            return False
+
+        # Any idea why the original daemons were structured this way?
+        # Are we breaking anything by not reaching this line?
+        return ret
 
 class LeftSideDaemon(BTNode):
     ### percentage: percentage of hitpoints that must have been lost to fail the daemon check
@@ -760,8 +819,10 @@ class LeftSideDaemon(BTNode):
         # currently, no logic implemented
         return self.getChild(0).execute(delta)
 
-        return ret
 
+        # Any idea why the original daemons were structured this way?
+        # Are we breaking anything by not reaching this line?
+        return ret
 
 class Formation(BTNode):
     ### target: the hero to chase
@@ -848,8 +909,8 @@ class HealerBarkDaemon(BTNode):
 
     def execute(self, delta=0):
         ret = BTNode.execute(self, delta)
-		
-		# if self.playerHealth < .5 * HEROHITPOINTS and self.healerDistanceToPlayer < 150 and self.bark == True: 
+
+        # if self.playerHealth < .5 * HEROHITPOINTS and self.healerDistanceToPlayer < 150 and self.bark == True:
         #     return self.getChild(0).execute(delta)
         # else:
         #     return False

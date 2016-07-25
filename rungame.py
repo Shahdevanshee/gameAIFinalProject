@@ -29,6 +29,8 @@ from agents2 import *
 from SquadBaselineMinion import *
 from SquadBaselineHero import *
 
+# debugging
+enable_shadows = False
 
 ############################
 ### SET UP WORLD
@@ -212,9 +214,11 @@ for loc in weenies:
 #################################################
 # This is the shadows and cover node entry point#
 #################################################
-
-world.getStationaryShooterShadowParams()
-world.getShadows_final()
+if enable_shadows:
+	world.getStationaryShooterShadowParams()
+	world.getShadows_final()
+else:
+	world.useShadows = False
 #region Old Shadow Function Calls
 #world.getBaseShadows()
 #world.getCoverNodes()
