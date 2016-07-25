@@ -2077,8 +2077,9 @@ def shootEnRoute(agent):
                 dist=d
                 target=e
         if target:
-            agent.turnToFace(target.getLocation())
-            agent.shoot()
+            shootAtTarget_function(agent, target)
+            #agent.turnToFace(target.getLocation())
+            #agent.shoot()
 
 def AOEEnRoute(agent):
     if isinstance(agent,Hero):
@@ -2098,3 +2099,77 @@ def AOEEnRoute(agent):
 
 
 
+# Leading Shot Functions
+def normalize(line):
+    dx = line[1][0] - line[0][0]
+    dy = line[1][1] - line[0][1]
+    mag = (dx**2.0 + dy**2.0)**0.5
+    if mag == 0.0:
+        return (0.,0.)
+    return (dx/mag,dy/mag)
+def turnToFace_TurnAngle(agent, pos):
+    direction = (pos[0] - agent.getLocation()[0], pos[1] - agent.getLocation()[1])
+    angle = math.degrees(numpy.arctan2(direction[0],direction[1]))-90
+    return angle
+
+def cross_product(a,b):
+    i = a[1]*b[2]
+    j = a[2]*b[0]
+    k = a[0]*b[1]
+    return (i,j,k)
+
+def polarity(vector_to_agent,normalizedDirection):
+    polarity_primitive = vector_to_agent[0] * normalizedDirection[1] - vector_to_agent[1] * normalizedDirection[0]
+    if polarity_primitive >= 0:
+        return 1.0
+    else:
+        return -1.0
+def leading_shot_angle(agent,target):
+    if not isinstance(target,Tower) and not isinstance(target,Base):
+        if not target.isMoving():
+            return False,0.
+    else:
+        return False,0.
+    # this is going to happen anyway
+    agent.turnToFace(target.position)
+
+    target_position = target.position
+    target_destination = target.moveTarget
+    target_speed = target.speed
+    normalizedDirection = normalize((target_position,target_destination))
+
+    agent_position = agent.position
+    vector_to_agent = normalize((target_position,agent_position))
+
+    if normalizedDirection and vector_to_agent:
+        if isinstance(normalizedDirection[0],numpy.float) and isinstance(normalizedDirection[1],numpy.float) and isinstance(vector_to_agent[0],numpy.float) and isinstance(vector_to_agent[1],numpy.float):
+            dp = dotProduct(normalizedDirection,vector_to_agent)
+        else:
+            dp = 0.
+    else:
+        dp = 0.
+    phi = math.acos(dp)
+
+
+    bullet_speed = BIGBULLETSPEED
+    theta_prime = math.degrees(math.asin((float(target_speed[0])/float(bullet_speed[0]))*math.sin(phi)))
+    #print ("normalizedDirection:{0} vector_to_agent:{1}".format(normalizedDirection,vector_to_agent))
+    theta = polarity(vector_to_agent,normalizedDirection)*theta_prime
+    total_angle = agent.orientation + theta
+    #o if total_angle > 360:
+    # 	return True,total_angle - 360
+    # elif total_angle < 0:
+    # 	return True,total_angle + 360
+    # else:
+    # 	return True,total_angle
+    return True,total_angle
+
+def shootAtTarget_function(agent,target):
+    if agent is not None and target is not None:
+        takeLeadingShot, turn_angle = leading_shot_angle(agent, target)
+        if takeLeadingShot:
+            agent.turnToAngle(turn_angle)
+        # self.agent.turnToAngle(turn_angle)
+        else:
+            agent.turnToFace(target.getLocation())
+        agent.shoot()

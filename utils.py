@@ -295,7 +295,7 @@ def crossProduct(p1, p2, p3):
 	return (dx1*dy2) - (dy1*dx2)
 	
 def dotProduct(p1, p2):
-	return (p1[0]*p2[0]) + (p1[1]*p2[1])
+	return (numpy.float(p1[0])*numpy.float(p2[0])) + (numpy.float(p1[1])*numpy.float(p2[1]))
 
 
 #Special routine for appending a line to a list of lines, making sure there are no duplicates added. Changes made by side-effect.
