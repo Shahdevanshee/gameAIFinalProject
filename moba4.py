@@ -600,7 +600,7 @@ class MOBAWorld(GatedWorld):
         self.obstacleShadowParameters = []
         self.obstacleCoverNodes_Randomized = []
         self.useShadows = True
-
+        self.drawShadows = True
 
     def addBase(self, base):
         self.bases.append(base)
