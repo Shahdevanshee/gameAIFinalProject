@@ -267,6 +267,7 @@ def BarkContext(character, previous_state=None):
         healer_defaults = {}
         healer_defaults["playerHealth"] = None
         healer_defaults["playerDistance"] = None
+        healer_defaults["hero"] = None
 
         companion1_defaults = {}
         companion2_defaults = {}
@@ -310,6 +311,7 @@ def BarkContext(character, previous_state=None):
         if hero:
             barkState[character.id]["playerHealth"] = np.float(hero.getHitpoints())/np.float(hero.getMaxHitpoints())
             barkState[character.id]["playerDistance"] = distance(hero.position,character.position)
+            barkState[character.id]["hero"] = hero
     #endregion
 
     #region Update Companion-relevant stuff
