@@ -909,6 +909,7 @@ class HealerBarkDaemon(BTNode):
 
         #### Chris Add on For Bark "Logic"
         if self.agent.justHeardBark == True or self.agent.executingBark == True:
+            print 'I HEARD THE BARK'
             self.agent.justHeardBark = False
             
             player_health = self.agent.barkState[self.id]["playerHealth"]
@@ -921,6 +922,7 @@ class HealerBarkDaemon(BTNode):
                 return False
         else:
             # Double check this logic.  Not sure it will work as expected
+            print 'THERE WAS NO BARK HEARD'
             self.agent.executingBark = False
             self.agent.justHeardBark = False
             return False
@@ -1018,8 +1020,8 @@ class FindTeammate(BTNode):
     def enter(self):
         BTNode.enter(self)
         self.timer = 50
-        
-        if self.hero != self.agent.minionTarget: #should expect a hero if from other branch. should expect minion if passed through the daemon successfully.
+        print 'my hero is ' + str(self.hero)
+        if self.hero != self.agent.minionTarget and self.hero != None: #should expect a hero if from other branch. should expect minion if passed through the daemon successfully.
             self.target = self.hero
         else:
             self.target = self.agent.minionTarget
