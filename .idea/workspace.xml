@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="93a36219-fba0-4330-adac-8b79424b008d" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/agents2.py" afterPath="$PROJECT_DIR$/agents2.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/core.py" afterPath="$PROJECT_DIR$/core.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/moba4.py" afterPath="$PROJECT_DIR$/moba4.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/rungame.py" afterPath="$PROJECT_DIR$/rungame.py" />
-    </list>
+    <list default="true" id="93a36219-fba0-4330-adac-8b79424b008d" name="Default" comment="" />
     <ignored path="gamAISquad.iws" />
     <ignored path=".idea/workspace.xml" />
     <ignored path=".idea/dataSources.local.xml" />
@@ -76,8 +71,8 @@
           <file leaf-file-name="rungame.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/rungame.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="229">
-                  <caret line="220" column="36" selection-start-line="220" selection-start-column="36" selection-end-line="220" selection-end-column="36" />
+                <state relative-caret-position="382">
+                  <caret line="220" column="28" selection-start-line="220" selection-start-column="27" selection-end-line="220" selection-end-column="28" />
                   <folding />
                 </state>
               </provider>
@@ -883,8 +878,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/rungame.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="229">
-          <caret line="220" column="36" selection-start-line="220" selection-start-column="36" selection-end-line="220" selection-end-column="36" />
+        <state relative-caret-position="382">
+          <caret line="220" column="28" selection-start-line="220" selection-start-column="27" selection-end-line="220" selection-end-column="28" />
           <folding />
         </state>
       </provider>
