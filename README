@@ -1,0 +1,29 @@
+Ian Buckley
+Lanssie Ma
+Chris Donlan
+
+07/26/2016
+
+Use python to execute rungame.py
+
+Controls are:
+    w--up
+    d--right
+    s--down
+    a--left
+    e--bark
+    shift--dodge in wasd direction
+    space--AOE
+    l-click--shoot
+    r-click--navigate to
+
+Modifications to core.py:
+    1. Player controls
+    2. Resizeable window
+    3. Mover.move() prevents agents from intersecting obstacles
+
+For an overview of the project, please read our report: report.pdf
+    
+Thanks to Rob Solomon for the loadimages performance boost in utils.py.
+
+    
