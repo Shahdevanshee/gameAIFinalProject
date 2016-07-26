@@ -387,7 +387,7 @@ class Healer(MOBAAgent, Barker):
         self.areaEffectDamage = areaeffectdamage
         self.areaEffectTimer = 0
         self.getHero()
-
+        self.person_to_heal = None
 
     def die(self):
         MOBAAgent.die(self)
@@ -480,7 +480,7 @@ class MyHealer(Healer, BehaviorTree):
         ### YOUR CODE GOES ABOVE HERE ###
         self.nearestShadow = None
 
-
+        self.setHero()
 
     def update(self, delta):
         Healer.update(self, delta)
@@ -543,8 +543,17 @@ class MyHealer(Healer, BehaviorTree):
         self.barkState = BarkContext(self,previous_state=self.barkState)
         ### YOUR CODE GOES BELOW HERE ###
         self.justHeardBark = True
+        print 'HEALER i just heard a bark' + str(self.justHeardBark)
         self.calculateHeardBarkString()
 
+    def setHero(self):
+        current_team = self.getTeam()
+        team_npcs = self.world.getNPCsForTeam(current_team)
+        hero= None
+        for friend in team_npcs:
+            if isinstance(friend,PlayerHero):
+                hero = friend
+        self.myHero = hero
         #region Below to be handled in behavior tree
         # pause beavhior tree?
         #self.stop()
@@ -706,11 +715,11 @@ def healerTreeSpec(agent):
 
 	# LANSSIE STUFF
     spec = [(Selector, 'starting the healer'),
-                [(HealerBarkDaemon,'heard bark order'), #dogde
-                    [(Sequence, 'finding and healing hero sequence'), (FindTeammate, agent.myHero, 'finding hero'), (HealTeammate, agent.myHero, 'Healing Hero')]
+                [(HealerBarkDaemon,0),#(FindTeammate, agent.myHero, 'finding hero'), (HealTeammate, agent.myHero, 'Healing Hero')], #dogde
+                        [(Sequence, 'finding and healing hero sequence'), (FindTeammate, agent.myHero, 'finding hero'), (HealTeammate, agent.myHero, 'Healing Hero')]
                 ],
-                [(HealTeammateDaemon, 'regular healing'), #dodge
-                    [(Sequence, 'finding and healing teammate sequence'),(FindTeammate, agent.minionTarget, 'finding hero'), (HealTeammate, agent.minionTarget, 'Healing Hero')],
+                [(HealTeammateDaemon, 'regular healing'),# (FindTeammate, agent.minionTarget, 'finding min'), (HealTeammate, agent.minionTarget, 'Healing min')],#dodge
+                        [(Sequence, 'finding and healing teammate sequence'),(FindTeammate, agent.minionTarget, 'finding min'), (HealTeammate, agent.minionTarget, 'Healing min')]
                 ],
                 (Formation, 'doing regular formation')
             ]
@@ -871,7 +880,7 @@ class Formation(BTNode):
                 self.agent.navigateTo(self.formation_node)
             shootEnRoute(self.agent)
             AOEEnRoute(self.agent)
-            return None
+            return False
         return ret
 
 
@@ -906,14 +915,16 @@ class HealerBarkDaemon(BTNode):
         #     return False
         # return ret
 
-
+        print 'DID I JUST HEAR A BARK?' + str(self.agent.justHeardBark)
+        print 'AM I EXECUTING BARK?' + str(self.agent.executingBark)
+        self.agent.person_to_heal = self.agent.barkState[self.agent.id]["hero"]
         #### Chris Add on For Bark "Logic"
         if self.agent.justHeardBark == True or self.agent.executingBark == True:
-            print 'I HEARD THE BARK'
+            print 'I HEARD THE BARK -BARK DAEMON'
             self.agent.justHeardBark = False
             
-            player_health = self.agent.barkState[self.id]["playerHealth"]
-            player_distance = self.agent.barkState[self.id]["playerDistance"]
+            player_health = self.agent.barkState[self.agent.id]["playerHealth"]
+            player_distance = self.agent.barkState[self.agent.id]["playerDistance"]
             if player_health < .5 * HEROHITPOINTS and player_distance < 150: 
                 self.agent.executingBark = True
                 return self.getChild(0).execute(delta)
@@ -922,7 +933,7 @@ class HealerBarkDaemon(BTNode):
                 return False
         else:
             # Double check this logic.  Not sure it will work as expected
-            print 'THERE WAS NO BARK HEARD'
+            print 'THERE WAS NO BARK HEARD -BARK DAEMON'
             self.agent.executingBark = False
             self.agent.justHeardBark = False
             return False
@@ -946,23 +957,28 @@ class HealTeammateDaemon(BTNode):
         # Get a reference to the enemy hero
         team = self.agent.world.getNPCsForTeam(self.agent.getTeam())
         #print team 
-
+        print 'IM HEALING THE TEAM INSTEAD -HEAL DAEMON'
         to_heal = None
         distance_away = {} #key = teammate, value = distance
 
         for teammate in team:
             if teammate != self.agent and teammate != self.agent.myHero:
+                print 'this is my teammate' + str(teammate)
                 distance_away[teammate] = distance(teammate.getLocation(), self.agent.getLocation())
         #print distance_away
         min_to_heal = min(distance_away, key=distance_away.get)
-        #print to_heal
+        print   min_to_heal
         min_dist = min(distance_away)
 
-        if min_to_heal != None and min_to_heal.isAlive() and min_dist < 150 and min_to_heal.getHitpoints() < .5*min_to_heal.getMaxHitpoints():
+        if min_to_heal != None and min_to_heal.isAlive(): #and min_dist < 150 and min_to_heal.getHitpoints() < .5*min_to_heal.getMaxHitpoints():
             self.agent.minionTarget = min_to_heal
+            self.agent.person_to_heal = min_to_heal
+            print 'this is my minion target ' + str(self.agent.minionTarget)
             self.agent.minionTargetLocation = min_to_heal.getLocation()
+            print 'MOVING FORWARD WITH HEALING TEAMMATE'
             return self.getChild(0).execute(delta)
         else:
+            print 'CANT PASS HEAL DAEMON'
             return False
         return ret
 
@@ -975,22 +991,28 @@ class HealTeammate(BTNode):
         self.timer = 50
         # First argument is the node ID
         if len(args) > 0:
-            self.target = args[0]
-        if len(args) > 1:
-            self.id = args[1]
+            # self.target = args[0]
+        # if len(args) > 1:
+            self.id = args[0]
 
     def enter(self):
+        print 'entered heal teammate'
+        self.target = self.agent.person_to_heal
         return None
 
     def execute(self, delta=0):
+        print 'HEALING THE TEAMMATE'
         ret = BTNode.execute(self, delta)
+        print self.target
         if self.target == None or self.target.isAlive() == False:
             # failed execution conditions
             #print "exec", self.id, "false"
+            print 'COULDNT HEAL TEAMMATE'
             return False
         else:
             self.agent.heal(self.target)
-            # return True
+            print 'HEALED THE TARGET ' + str(self.target)
+            return True
         return ret
 
 
@@ -1013,18 +1035,19 @@ class FindTeammate(BTNode):
         self.timer = 50
         # First argument is the node ID
         if len(args) > 0:
-            self.hero = args[0]
-        if len(args) > 1:
-            self.id = args[1]
+            # self.hero = args[0]
+        # if len(args) > 1:
+            self.id = args[0]
 
     def enter(self):
         BTNode.enter(self)
         self.timer = 50
+        self.target = self.agent.person_to_heal
         print 'my hero is ' + str(self.hero)
-        if self.hero != self.agent.minionTarget and self.hero != None: #should expect a hero if from other branch. should expect minion if passed through the daemon successfully.
-            self.target = self.hero
-        else:
-            self.target = self.agent.minionTarget
+        # if isinstance(self.hero,PlayerHero) and self.hero != None: #should expect a hero if from other branch. should expect minion if passed through the daemon successfully.
+        #     self.target = self.hero
+        # else:
+        #     self.target = self.agent.minionTarget
         if self.target is not None:
             navTarget = self.chooseNavigationTarget()
             if navTarget is not None:
@@ -1034,14 +1057,15 @@ class FindTeammate(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or self.target.isAlive() == False:
             # failed execution conditions
-            #print "exec", self.id, "false"
+            print "exec", self.id, "false"
             return False
-        elif distance(self.agent.getLocation(), self.target.getLocation()) < 1:
+        elif distance(self.agent.getLocation(), self.target.getLocation()) < 30:
             # succeeded
-            #print "exec", self.id, "true"
+            print "exec", self.id, "true"
             return True
         else:
             # executing
+            print 'trying to find teammate'
             self.timer = self.timer - 1
             if self.timer <= 0:
                 self.timer = 50
