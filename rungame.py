@@ -30,7 +30,8 @@ from SquadBaselineMinion import *
 from SquadBaselineHero import *
 
 # debugging
-enable_shadows = False
+enable_shadows = True
+draw_shadows = True
 
 ############################
 ### SET UP WORLD
@@ -217,8 +218,10 @@ for loc in weenies:
 if enable_shadows:
 	world.getStationaryShooterShadowParams()
 	world.getShadows_final()
+	world.drawShadows = draw_shadows
 else:
 	world.useShadows = False
+	world.drawShadows = False
 #region Old Shadow Function Calls
 #world.getBaseShadows()
 #world.getCoverNodes()

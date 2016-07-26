@@ -214,11 +214,11 @@ class MOBAWorld2(MOBAWorld):
         #    drawCross(self.background, (100, 100), color=(0, 255, 0))
 
         ''' shadow nodes '''
-        #if self.useShadows:
-        #    for shadow_centroid in self.shadowCentroids:
-        #        cover_nodes = self.shadows[shadow_centroid]
-                #for node in cover_nodes:
-                #    drawCross(self.background,node,color=(75,150,150),size=5,width = 4)
+        if self.useShadows and self.drawShadows:
+           for shadow_centroid in self.shadowCentroids:
+               cover_nodes = self.shadows[shadow_centroid]
+               for node in cover_nodes:
+                   drawCross(self.background,node,color=(75,150,150),size=5,width = 4)
 
 
 #############################################
@@ -1357,8 +1357,9 @@ class KillEnemy(BTNode):
 
     def shootAtTarget(self):
         if self.agent is not None and self.target is not None:
-            self.agent.turnToFace(self.target.getLocation())
-            self.agent.shoot()
+            shootAtTarget_function(self.agent,self.target)
+            #self.agent.turnToFace(self.target.getLocation())
+            #self.agent.shoot()
 
 
 ##################
@@ -1505,8 +1506,9 @@ class KillMinion(BTNode):
 
     def shootAtTarget(self):
         if self.agent is not None and self.target is not None:
-            self.agent.turnToFace(self.target.getLocation())
-            self.agent.shoot()
+            shootAtTarget_function(self.agent,self.target)
+            #self.agent.turnToFace(self.target.getLocation())
+            #self.agent.shoot()
 
 
 ##################
@@ -1630,8 +1632,9 @@ class KillHero(BTNode):
 
     def shootAtTarget(self):
         if self.agent is not None and self.target is not None:
-            self.agent.turnToFace(self.target.getLocation())
-            self.agent.shoot()
+            shootAtTarget_function(self.agent,self.target)
+            #self.agent.turnToFace(self.target.getLocation())
+            #self.agent.shoot()
 
 
 #####################

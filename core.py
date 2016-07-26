@@ -883,7 +883,7 @@ class GameWorld():
         self.camera = [0, 0]
         # unobstructed places
         self.destinations = {}
-    
+
     def getPoints(self):
         return self.points
     
