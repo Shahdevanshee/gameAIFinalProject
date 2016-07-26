@@ -1,0 +1,43 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.75in]{geometry}
+\title{Game AI Final Project Proposal}
+\author{Ian Buckley, Chris Donlan, Lanssie Ma}
+\date{\today}
+\begin{document}
+\begin{center}
+\textbf{Game AI Final Project Report}\\
+Ian Buckley, Chris , Lanssie Ma\\
+\today
+\end{center}
+\begin{abstract}
+The Squad Companions project was completed as the capstone project for the course. The primary objectives of implementing player navigation, effective supporting AI, dynamic formations, and contextual player-AI interaction. Navigation was addressed by modifying the core files. Behaviour trees were the primary means of implementing the companion AI with the contextual player interaction. Ultimately, the project was a success, and the grand objective of supporting the player was achieved.
+\end{abstract}
+\section{Introduction}
+We have completed the Squad Companions project. The Squad Companions game involves the player and 3 AI companion agents assaulting an enemy base while fending off enemy agents and attacks. The 3 agents include two Hero class agents and one Healer class. The completion of the project involved addressing a number of objectives. Modification of the core file was necessary to enable player navigation. Defining a dynamic formation was critical in supporting the player's attempts to win the game. Emphasis was placed on ensuring that the companion AI was independently effective so that players with different abilities can win. Lastly, using a simple context based interaction between the player and the companions was central in giving the player control over her squad. 
+
+\section{Approach}
+The following sections will highlight the approach used to achieve these objectives.
+
+\paragraph{Player Navigation}
+The core files originally supported only simultaneous moving and shooting by the player, which is frustrating and unusable for the player. Modification to the core files addressed this by implementing WASD movement for the player. Furthermore, the player is able to shoot in the direction of the cursor, and dodge in the direction of the directional key press. As seen in many recent games, it is still desirable to have the character move to a location indicated by a mouse click, so not only can the player move with WASD, she can right-click to move to a desired point while at any time, a directional key press can interrupt and override this movement.
+
+Implementing these controls introduced issues with obstacle collisions in which the player was able to move through obstacles. This was corrected by ensuring that the four corners of the player character sprite were not able to enter obstacles.
+
+\paragraph{Dynamic Formations}
+A triangle shaped formation of the companions was defined relative to the player's position. The two companions face outwards to block bullets from striking the player and the healer. The healer stands between the player and the heroes. Because the formation is defined relative to the hero's position, when the hero moves, the companions move in formation. Companions are able to shoot and perform area-of-effect attacks while in formation, but are not allowed to dodge. To further support the player while under formation, the formation is dynamically updated to face the nearest enemy, which serves the dual purpose of protecting the player and improving companion accuracy. Furthermore, the tight formation allows the healer to quickly heal teammates.
+
+\paragraph{Effective Companion AI}
+Behaviour trees were used to enable the companions to effectively assault the enemy base and minions while supporting the player. The primitive behaviours used by the Hero class companions were Chase Enemy, Kill Enemy, Retreat to Healer, Retreat to Base, and Maintain Formation. With each of these behaviours, opportunistic shooting, dodging, and area-of-effect attacks were enabled by including a function call for each in the primitive behaviours. For the Healer class companion, an addition Heal Teammate primitive was introduced. Behaviour trees were found to be very effective in supporting the player's objectives.
+
+For seamless, low-level interaction, a cover system was implemented so that the companions move in formation to the closest cover to the player. Cover was defined with regards to the powerful enemy towers, and safe cover locations were defined from the occluded areas behind obstacles. using this cover system, the player is able to move through the obstacle field without having to designate which cover the companions should go to.
+
+\paragraph{Contextual Companion Interaction}
+To support the player's ability to control the squad, a key was designated as the bark key. By pressing the key, the context was determined based on a number of variables including formation state, player health, and distance to the player. For the Hero class companions, barking was used to toggle between maintaining a formation and assaulting the enemy. For the Healer class companion, player health and the distance to the player were used to determine whether the healer would heal the player. Bark daemons were used in the behaviour trees to prune sub-trees to quickly switch between behaviours. 
+
+\section{Discussion}
+The approach was found to be very effective in supporting the player's objective to destroy the enemy base. The most significant challenges were improving and modifying the core files to enable navigation by the player, identifying the coordinate transformation necessary to transform Cartesian and polar coordinates into the coordinates of the game world, and identifying the best way to implement barking. Despite these challenges, all of the objectives defined in the proposal and the project description were successfully addressed. A cover system was generated, contextual interaction was implemented, and the companion AI was created with the player's objectives in mind.
+
+\section{Conclusion}
+This project serves as a laudable capstone for the course. All of the main topics addressed in the homework assignments were featured, and the addition of the player tied the Game AI theme of improving the player experience into the course. Future improvements to the game could include procedurally generated maps, variable difficulty implemented by adding stronger and smarted enemies, and complex barks. Limitations imposed by PyGame have been addressed, and future iterations of the class should make use of these improvements.
+
+\end{document}

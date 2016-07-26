@@ -23,7 +23,7 @@ from constants import *
 
 ########################
 ### PYGAME STUFF
-
+'''
 def load_image(name, colorkey=None):
   image = pygame.image.load(name)
   image = image.convert()
@@ -32,7 +32,26 @@ def load_image(name, colorkey=None):
       colorkey = image.get_at((0,0))
     image.set_colorkey(colorkey, RLEACCEL)
   return image, image.get_rect()
+'''
 
+image_cache = dict() 
+#used to store image references as they are loaded
+
+def load_image(name, colorkey=None):
+    image = None
+    if name not in image_cache:
+    	#start original load_image code
+        image = pygame.image.load(name)
+        image = image.convert()
+        if colorkey is not None:
+          if colorkey is -1:
+            colorkey = image.get_at((0,0))
+          image.set_colorkey(colorkey, RLEACCEL)
+        #end original load image code
+        image_cache[name] = image
+    else:
+        image = image_cache[name]
+    return image, image.get_rect()
 
 ############################
 ### OTHER STUFF
