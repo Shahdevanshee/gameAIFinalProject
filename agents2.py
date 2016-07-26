@@ -214,11 +214,11 @@ class MOBAWorld2(MOBAWorld):
         #    drawCross(self.background, (100, 100), color=(0, 255, 0))
 
         ''' shadow nodes '''
-        if self.useShadows:
-            for shadow_centroid in self.shadowCentroids:
-                cover_nodes = self.shadows[shadow_centroid]
-                for node in cover_nodes:
-                    drawCross(self.background,node,color=(75,150,150),size=5,width = 4)
+        #if self.useShadows:
+        #    for shadow_centroid in self.shadowCentroids:
+        #        cover_nodes = self.shadows[shadow_centroid]
+                #for node in cover_nodes:
+                #    drawCross(self.background,node,color=(75,150,150),size=5,width = 4)
 
 
 #############################################
@@ -523,7 +523,7 @@ class MyHealer(Healer, BehaviorTree):
     def communicationBark(self,string):
         print string
     def calculateBarkString(self):
-        print "Companion Minion Barking!!!"
+        #print "Companion Minion Barking!!!"
         return None
 
     def bark(self):
@@ -533,7 +533,7 @@ class MyHealer(Healer, BehaviorTree):
         self.calculateBarkString()
         ### YOUR CODE GOES ABOVE HERE
     def calculateHeardBarkString(self):
-        print "Companion Minion Heard Bark!!!"
+        #print "Companion Minion Heard Bark!!!"
         self.barkState = BarkContext(self,previous_state = self.barkState)
         self.calculateBarkString()
         return None
@@ -703,9 +703,6 @@ def healerTreeSpec(agent):
 
 
 	# LANSSIE STUFF
-    #hero = self.getHero(self.agent.world.getNPCsForTeam(self.agent.getTeam()))
-    # area of affect?
-
     spec = [(Selector, 'starting the healer'),
                 [(HealerBarkDaemon,'heard bark order'), #dogde
                     [(Sequence, 'finding and healing hero sequence'), (FindTeammate, agent.myHero, 'finding hero'), (HealTeammate, agent.myHero, 'Healing Hero')]
@@ -722,34 +719,24 @@ def companionTreeSpec(agent):
     myid = str(agent.getTeam())
     spec = None
     ### YOUR CODE GOES BELOW HERE ###
-    #TODO Finalize the specs that we want to toggle? between with barks
-
-    # Formation Daemon
-    formation_daemon = CompanionFormationDaemon
-    # Attack Daemon
-    attack_daemon = CompanionAttackDaemon
-
-    # Toggles upon bark
-
-
-
-    '''
-    # This spec is the Free Formation
-    spec=[(DodgeDaemon,'DD'),[(AEDaemon,'AED'),\
-                        [(Selector,'Sel1'),\
-                            [(Selector,'Sel4'),(RetreatToHealer,0.3,'Retreat'),(Retreat,0.3,'Retreat')\
-                            ],\
-                            [(HitpointDaemon,0.3,'HPD'),\
-                                [(Sequence,'Seq1'),(ChaseEnemy,'ChaseEnemy'),(KillEnemy,'KillEnemy')\
+    spec=[(Selector),\
+            [(CompanionFormationDaemon),\
+                    [(AEDaemon,'AED'),(Formation)\
+                    ]\
+            ],\
+            [(CompanionAttackDaemon),\
+                [(DodgeDaemon,'DD'),[(AEDaemon,'AED'),\
+                            [(Selector,'Sel1'),\
+                                [(Selector,'Sel4'),(RetreatToHealer,0.3,'Retreat'),(Retreat,0.3,'Retreat')\
                                 ],\
+                                [(HitpointDaemon,0.3,'HPD'),\
+                                    [(Sequence,'Seq1'),(ChaseEnemy,'ChaseEnemy'),(KillEnemy,'KillEnemy')\
+                                    ],\
+                                ]\
                             ]\
-                        ]\
                 ]\
             ]\
-    '''
-    # This spec is the Fixed Formation
-    spec=[(AEDaemon,'AED'),(Formation)]
-            
+        ]]\
     ### YOUR CODE GOES ABOVE HERE ###
     return spec
 
@@ -954,7 +941,7 @@ class HealTeammateDaemon(BTNode):
         hero = None
         # Get a reference to the enemy hero
         team = self.agent.world.getNPCsForTeam(self.agent.getTeam())
-        print team 
+        #print team 
 
         to_heal = None
         distance_away = {} #key = teammate, value = distance
@@ -962,9 +949,9 @@ class HealTeammateDaemon(BTNode):
         for teammate in team:
             if teammate != self.agent and teammate != self.agent.myHero:
                 distance_away[teammate] = distance(teammate.getLocation(), self.agent.getLocation())
-        print distance_away
+        #print distance_away
         min_to_heal = min(distance_away, key=distance_away.get)
-        print to_heal
+        #print to_heal
         min_dist = min(distance_away)
 
         if min_to_heal != None and min_to_heal.isAlive() and min_dist < 150 and min_to_heal.getHitpoints() < .5*min_to_heal.getMaxHitpoints():
@@ -981,7 +968,6 @@ class HealTeammate(BTNode):
 
     def parseArgs(self, args):
         BTNode.parseArgs(self, args)
-        self.target = None
         self.timer = 50
         # First argument is the node ID
         if len(args) > 0:
@@ -996,7 +982,7 @@ class HealTeammate(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or self.target.isAlive() == False:
             # failed execution conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         else:
             self.agent.heal(self.target)
@@ -1044,11 +1030,11 @@ class FindTeammate(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or self.target.isAlive() == False:
             # failed execution conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif distance(self.agent.getLocation(), self.target.getLocation()) < 1:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1145,11 +1131,11 @@ class MoveToTarget(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None:
             # failed executability conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif distance(self.agent.getLocation(), self.target) < self.agent.getRadius():
             # Execution succeeds
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1188,11 +1174,11 @@ class Retreat(BTNode):
         ret = BTNode.execute(self, delta)
         if self.agent.getHitpoints() > self.agent.getMaxHitpoints() * self.percentage:
             # fail executability conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif self.agent.getHitpoints() == self.agent.getMaxHitpoints():
             # Exection succeeds
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1241,11 +1227,11 @@ class ChaseEnemy(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or self.target.isAlive() == False:
             # failed execution conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif distance(self.agent.getLocation(), self.target.getLocation()) < BIGBULLETRANGE - 3:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1315,11 +1301,11 @@ class KillEnemy(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or distance(self.agent.getLocation(), self.target.getLocation()) > BIGBULLETRANGE:
             # failed executability conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif self.target.isAlive() == False:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1388,11 +1374,11 @@ class ChaseMinion(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or self.target.isAlive() == False:
             # failed execution conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif distance(self.agent.getLocation(), self.target.getLocation()) < BIGBULLETRANGE - 3:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1463,11 +1449,11 @@ class KillMinion(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or distance(self.agent.getLocation(), self.target.getLocation()) > BIGBULLETRANGE:
             # failed executability conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif self.target.isAlive() == False:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1529,11 +1515,11 @@ class ChaseHero(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or self.target.isAlive() == False:
             # fails executability conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif distance(self.agent.getLocation(), self.target.getLocation()) < BIGBULLETRANGE - 3:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1588,15 +1574,11 @@ class KillHero(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or distance(self.agent.getLocation(), self.target.getLocation()) > BIGBULLETRANGE:
             # failed executability conditions
-            if self.target == None:
-                print "foo none"
-            else:
-                print "foo dist", distance(self.agent.getLocation(), self.target.getLocation())
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif self.target.isAlive() == False:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1656,11 +1638,11 @@ class ChaseTower(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or self.target.isAlive() == False:
             # fails executability conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif distance(self.agent.getLocation(), self.target.getLocation()) < BIGBULLETRANGE - 3:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1713,15 +1695,11 @@ class KillTower(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or distance(self.agent.getLocation(), self.target.getLocation()) > BIGBULLETRANGE:
             # failed executability conditions
-            if self.target == None:
-                print "foo none"
-            else:
-                print "foo dist", distance(self.agent.getLocation(), self.target.getLocation())
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif self.target.isAlive() == False:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1773,7 +1751,7 @@ class HitpointDaemon(BTNode):
         ret = BTNode.execute(self, delta)
         if self.agent.getHitpoints() < self.agent.getMaxHitpoints() * self.percentage:
             # Check failed
-            print "exec", self.id, "fail"
+            #print "exec", self.id, "fail"
             return False
         else:
             # Check didn't fail, return child's status
@@ -1813,7 +1791,7 @@ class BuffDaemon(BTNode):
                 break
         if hero == None or self.agent.level <= hero.level + self.advantage:
             # fail check
-            print "exec", self.id, "fail"
+            #print "exec", self.id, "fail"
             return False
         else:
             # Check didn't fail, return child's status
@@ -1893,7 +1871,7 @@ class HeroPresentDaemon(BTNode):
                 break
         if hero != None and distance(self.agent.getLocation(), hero.getLocation()) < 1.05 * BIGBULLETRANGE:
             # fail check
-            print "exec", self.id, "fail"
+            #print "exec", self.id, "fail"
             return False
         else:
             # Check didn't fail, return child's status
@@ -1931,15 +1909,15 @@ class RetreatToHealer(BTNode):
         ret = BTNode.execute(self, delta)
         if self.agent.getHitpoints() > self.agent.getMaxHitpoints() * self.percentage:
             # fail executability conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif self.target == None or self.target.isAlive() == False:
             # failed execution conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif distance(self.agent.getLocation(), self.target.getLocation()) < self.agent.getMaxRadius() and self.agent.hitpoints==self.agent.getMaxHitpoints:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1985,11 +1963,11 @@ class RetreatToPlayer(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or self.target.isAlive() == False:
             # failed execution conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif distance(self.agent.getLocation(), self.target.getLocation()) < self.agent.getMaxRadius():
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing

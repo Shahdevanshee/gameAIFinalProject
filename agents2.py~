@@ -165,6 +165,7 @@ class MOBAWorld2(MOBAWorld):
         shadows = {}
 
         obstacles = self.getObstacles()
+        #obstacles = [self.getObstacles()[0]]
         for obstacle in obstacles:
             cover_grid = []
             for point in grid:
@@ -212,14 +213,16 @@ class MOBAWorld2(MOBAWorld):
         #    drawCross(self.background, point, color=(0, 255, 0), size=15, width=4)
         #    drawCross(self.background, (100, 100), color=(0, 255, 0))
 
-        for shadow_centroid in self.shadowCentroids:
-            cover_nodes = self.shadows[shadow_centroid]
-            for node in cover_nodes:
-                drawCross(self.background,node,color=(75,150,150),size=5,width = 4)
+        ''' shadow nodes '''
+        #if self.useShadows:
+        #    for shadow_centroid in self.shadowCentroids:
+        #        cover_nodes = self.shadows[shadow_centroid]
+                #for node in cover_nodes:
+                #    drawCross(self.background,node,color=(75,150,150),size=5,width = 4)
 
 
 #############################################
-def BarkContext(Mover):
+def BarkContext_original(Mover,previous_state = None):
     barkState = {}
     healer_values = {}
     minion_1_values = {}
@@ -253,16 +256,80 @@ def BarkContext(Mover):
     barkState[2] = minion_2_values
     ###########################################################
     return barkState
+def BarkContext(character, previous_state=None):
+    #placeholder: should be deleted
+    barkState = {}
+    companion_state_toggle = ["formation","attack"]
+
+    #region Populate with defaults if none
+    if previous_state == None:
+        barkState = {}
+        healer_defaults = {}
+        healer_defaults["playerHealth"] = None
+        healer_defaults["playerDistance"] = None
+
+        companion1_defaults = {}
+        companion2_defaults = {}
+
+        companion1_defaults["states"] = ["formation","attack"]
+        companion2_defaults["states"] = ["formation","attack"]
+
+        companion1_defaults["currentStateIndex"] = 0
+        companion2_defaults["currentStateIndex"] = 0
+
+        companion1_defaults["state"] = companion1_defaults["states"][companion1_defaults["currentStateIndex"]]
+        companion2_defaults["state"] = companion2_defaults["states"][companion2_defaults["currentStateIndex"]]
+
+
+        hero_defaults = {}
+
+        barkState[0] = healer_defaults
+        barkState[1] = companion1_defaults
+        barkState[2] = companion2_defaults
+        barkState[3] = hero_defaults
+        return barkState
+    #endregion
+
+    # barkState = previous_state.copy()
+
+    #region Update Hero-relevant stuff
+    #endregion
+
+    #region Update Healer-relevant stuff
+    # below could be streamlined
+
+    barkState = previous_state.copy()
+
+    if isinstance(character, MyHealer):
+        team = character.getTeam()
+        friends = character.world.getNPCsForTeam(team)
+        hero = None
+        for friend in friends:
+            if isinstance(friend,PlayerHero):
+                hero = friend
+        if hero:
+            barkState[character.id]["playerHealth"] = np.float(hero.getHitpoints())/np.float(hero.getMaxHitpoints())
+            barkState[character.id]["playerDistance"] = distance(hero.position,character.position)
+    #endregion
+
+    #region Update Companion-relevant stuff
+    if isinstance(character,MyCompanionHero):
+        current_state_index = barkState[character.id]["currentStateIndex"]
+        if current_state_index == 0:
+            barkState[character.id]["currentStateIndex"] = 1
+        else:
+            barkState[character.id]["currentStateIndex"] = 0
+        barkState[character.id]["state"] = barkState[character.id]["states"][barkState[character.id]["currentStateIndex"]]
+    #endregion
+    return barkState
 
 class Barker():
     def __init__(self):
-        self.barkState = None
-    def bark(self):
         self.barkState = BarkContext(self)
+    def bark(self):
         pass
 
     def hearBark(self, thebark):
-        self.barkState = thebark
         pass
 
 
@@ -402,18 +469,28 @@ class MyHealer(Healer, BehaviorTree):
         self.startState = None
         ### YOUR CODE GOES BELOW HERE ###
         self.team = self.getTeam()
+
         self.justHeardBark = False
+        self.executingBark = False
+
+
         self.barkState = BarkContext(self)
+        self.executingBark = False
         ### YOUR CODE GOES ABOVE HERE ###
         self.nearestShadow = None
+
 
 
     def update(self, delta):
         Healer.update(self, delta)
         BehaviorTree.update(self, delta)
 
-        #region  Shadow Update
-        self.nearestShadow = sorted(self.world.shadowCentroids,key=lambda x: distance(x,self.position))[0]
+        #region  Shadow Update--uncomment for shadows
+        if self.world.useShadows:
+            self.nearestShadow = sorted(self.world.shadowCentroids,key=lambda x: distance(x,self.position))[0]
+
+
+
         #endregion
         # region testing
         # nearest_shadow_grid = self.getNearestShadowGrid()
@@ -446,19 +523,23 @@ class MyHealer(Healer, BehaviorTree):
     def communicationBark(self,string):
         print string
     def calculateBarkString(self):
-        print "Companion Minion Barking!!!"
+        #print "Companion Minion Barking!!!"
         return None
 
     def bark(self):
         Barker.bark(self)
+        self.barkState = BarkContext(self,previous_state=self.barkState)
         ### YOUR CODE GOES BELOW HERE
         self.calculateBarkString()
         ### YOUR CODE GOES ABOVE HERE
     def calculateHeardBarkString(self):
-        print "Companion Minion Heard Bark!!!"
+        #print "Companion Minion Heard Bark!!!"
+        self.barkState = BarkContext(self,previous_state = self.barkState)
+        self.calculateBarkString()
         return None
     def hearBark(self, thebark):
         Barker.hearBark(self, thebark)
+        self.barkState = BarkContext(self,previous_state=self.barkState)
         ### YOUR CODE GOES BELOW HERE ###
         self.justHeardBark = True
         self.calculateHeardBarkString()
@@ -507,22 +588,43 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
 
 
     def calculateBarkString(self):
-        print "Companion Minion Barking!!!"
+        if self.barkState[self.id]["state"] == "formation":
+            print "Taking Position!!!"
+        if self.barkState[self.id]["state"] == "attack":
+            print "Engaging the Enemy!!!"
         return None
     def communicationBark(self,string):
         print string
     def bark(self):
         Barker.bark(self)
         ### YOUR CODE GOES BELOW HERE
+        self.barkState = BarkContext(self,previous_state = self.barkState)
         self.calculateBarkString()
         ### YOUR CODE GOES ABOVE HERE
+
+    def calculateHeardBarkString(self):
+        print "Companion Minion Heard Bark!!!"
+        self.calculateBarkString()
+        return None
+
+    def hearBark(self, thebark):
+        Barker.hearBark(self, thebark)
+        ### YOUR CODE GOES BELOW HERE ###
+        self.justHeardBark = True
+        self.barkState = BarkContext(self,previous_state = self.barkState)
+        self.calculateHeardBarkString()
+        ### YOUR CODE GOES ABOVE HERE ###
 
     def update(self, delta):
         Hero.update(self, delta)
         BehaviorTree.update(self, delta)
 
         # region  Shadow Update
-        self.nearestShadow = sorted(self.world.shadowCentroids, key=lambda x: distance(x, self.position))[0]
+        if self.world.useShadows:
+            self.nearestShadow = sorted(self.world.shadowCentroids, key=lambda x: distance(x, self.position))[0]
+
+
+
         # endregion
         # region testing
         # nearest_shadow_grid = self.getNearestShadowGrid()
@@ -553,28 +655,6 @@ class MyCompanionHero(Hero, BehaviorTree, Barker):
         Hero.stop(self)
         BehaviorTree.stop(self)
 
-    def calculateBarkString(self):
-        print "Companion Minion Barking!!!"
-        return None
-
-    def bark(self):
-        Barker.bark(self)
-        ### YOUR CODE GOES BELOW HERE
-        self.calculateBarkString()
-        ### YOUR CODE GOES ABOVE HERE
-
-
-    def calculateHeardBarkString(self):
-        print "Companion Minion Heard Bark!!!"
-        return None
-
-    def hearBark(self, thebark):
-        Barker.hearBark(self, thebark)
-        ### YOUR CODE GOES BELOW HERE ###
-        self.justHeardBark = True
-        self.calculateHeardBarkString()
-        ### YOUR CODE GOES ABOVE HERE ###
-
 
 ##########################################################
 ### IDLE STATE
@@ -602,7 +682,7 @@ def healerTreeSpec(agent):
     spec = None
     ### YOUR CODE GOES BELOW HERE ###
     #TODO This is a place holder spec, we need one that actually heals!
-    spec=[(AEDaemon,'AED'),(Formation)]
+    # spec=[(AEDaemon,'AED'),(Formation)]
 
     # spec = [Selector, [HealthDaemon, HealCompanion],[LeftSideDaemon, Formation], TacticalCover]
     # spec = [Selector, [LeftSideDaemon, Formation]]  # , TacticalCover]
@@ -611,30 +691,27 @@ def healerTreeSpec(agent):
 	#### Chris: variables ####
 
 	# Lanssie, the variables: (these won't populate during the build tree process, since (I think) the build happens before the game starts.)
-    heard_bark = agent.justHeardBark
-    if heard_bark:
-        healer_barkContext = agent.barkState[agent.id]
-        playerHealth = healer_barkContext["playerHealth"]
-        playerDistance = healer_barkContext["playerDistance"]
-    # and to reset the bark state
-    agent.justHeardBark = False
+    # heard_bark = agent.justHeardBark
+    # if heard_bark:
+    #     healer_barkContext = agent.barkState[agent.id]
+    #     playerHealth = healer_barkContext["playerHealth"]
+    #     playerDistance = healer_barkContext["playerDistance"]
+    # # and to reset the bark state
+    # agent.justHeardBark = False
 
     ##########################
 
 
 	# LANSSIE STUFF
-    #hero = self.getHero(self.agent.world.getNPCsForTeam(self.agent.getTeam()))
-    # area of affect?
-
-    # spec = [(Selector, 'starting the healer'),
-    #             [(HealerBarkDaemon, playerHealth, distance_helaer_to_player, barkorder,'heard bark order'), #dogde
-    #                 [(Sequence, 'finding and healing hero sequence'), (FindTeammate, agent.myHero, 'finding hero'), (HealTeammate, agent.myHero, 'Healing Hero')]
-    #             ],
-    #             [(HealTeammateDaemon, 'regular healing'), #dodge
-    #                 [(Sequence, 'finding and healing teammate sequence'),(FindTeammate, agent.minionTarget, 'finding hero'), (HealTeammate, agent.minionTarget, 'Healing Hero')],
-    #             ],
-    #             (Formation, 'doing regular formation')
-    #         ]
+    spec = [(Selector, 'starting the healer'),
+                [(HealerBarkDaemon,'heard bark order'), #dogde
+                    [(Sequence, 'finding and healing hero sequence'), (FindTeammate, agent.myHero, 'finding hero'), (HealTeammate, agent.myHero, 'Healing Hero')]
+                ],
+                [(HealTeammateDaemon, 'regular healing'), #dodge
+                    [(Sequence, 'finding and healing teammate sequence'),(FindTeammate, agent.minionTarget, 'finding hero'), (HealTeammate, agent.minionTarget, 'Healing Hero')],
+                ],
+                (Formation, 'doing regular formation')
+            ]
     ### YOUR CODE GOES ABOVE HERE ###
     return spec
 
@@ -642,23 +719,24 @@ def companionTreeSpec(agent):
     myid = str(agent.getTeam())
     spec = None
     ### YOUR CODE GOES BELOW HERE ###
-    '''
-    # This spec is the Free Formation
-    spec=[(DodgeDaemon,'DD'),[(AEDaemon,'AED'),\
-                        [(Selector,'Sel1'),\
-                            [(Selector,'Sel4'),(RetreatToHealer,0.3,'Retreat'),(Retreat,0.3,'Retreat')\
-                            ],\
-                            [(HitpointDaemon,0.3,'HPD'),\
-                                [(Sequence,'Seq1'),(ChaseEnemy,'ChaseEnemy'),(KillEnemy,'KillEnemy')\
+    spec=[(Selector),\
+            [(CompanionFormationDaemon),\
+                    [(AEDaemon,'AED'),(Formation)\
+                    ]\
+            ],\
+            [(CompanionAttackDaemon),\
+                [(DodgeDaemon,'DD'),[(AEDaemon,'AED'),\
+                            [(Selector,'Sel1'),\
+                                [(Selector,'Sel4'),(RetreatToHealer,0.3,'Retreat'),(Retreat,0.3,'Retreat')\
                                 ],\
+                                [(HitpointDaemon,0.3,'HPD'),\
+                                    [(Sequence,'Seq1'),(ChaseEnemy,'ChaseEnemy'),(KillEnemy,'KillEnemy')\
+                                    ],\
+                                ]\
                             ]\
-                        ]\
                 ]\
             ]\
-    '''
-    # This spec is the Fixed Formation
-    spec=[(AEDaemon,'AED'),(Formation)]
-            
+        ]]\
     ### YOUR CODE GOES ABOVE HERE ###
     return spec
 
@@ -674,6 +752,40 @@ def makeNode(type, agent, *args):
 
 ##########################################################
 ### YOUR STATES AND BEHAVIORS GO HERE
+class CompanionFormationDaemon(BTNode):
+    def parseArgs(self,args):
+        BTNode.parseArgs(self,args)
+    def execute(self,delta=0):
+        ret = BTNode.execute(self,delta)
+
+        condition = self.agent.barkState[self.agent.id]["state"] == "formation"
+        if condition:
+            return self.getChild(0).execute(delta)
+        else:
+            return False
+
+
+        # Any idea why the original daemons were structured this way?
+        # Are we breaking anything by not reaching this line?
+        return ret
+
+
+class CompanionAttackDaemon(BTNode):
+    def parseArgs(self, args):
+        BTNode.parseArgs(self, args)
+
+    def execute(self, delta=0):
+        ret = BTNode.execute(self,delta)
+
+        condition = self.agent.barkState[self.agent.id]["state"] == "attack"
+        if condition:
+            return self.getChild(0).execute(delta)
+        else:
+            return False
+
+        # Any idea why the original daemons were structured this way?
+        # Are we breaking anything by not reaching this line?
+        return ret
 
 class LeftSideDaemon(BTNode):
     ### percentage: percentage of hitpoints that must have been lost to fail the daemon check
@@ -695,8 +807,10 @@ class LeftSideDaemon(BTNode):
         # currently, no logic implemented
         return self.getChild(0).execute(delta)
 
-        return ret
 
+        # Any idea why the original daemons were structured this way?
+        # Are we breaking anything by not reaching this line?
+        return ret
 
 class Formation(BTNode):
     ### target: the hero to chase
@@ -772,22 +886,45 @@ class HealerBarkDaemon(BTNode):
         self.timer = 50
         # First argument is the factor
         if len(args) > 0:
-            self.playerHealth = args[0]
-        # Second argument is the node ID
-        if len(args) > 1:
-            self.healerDistanceToPlayer = args[1]
-        if len(args) > 2:
-            self.bark = args[2]
-        if len(args) > 3:
-            self.id = args[3]        
+        #     self.playerHealth = args[0]
+        # # Second argument is the node ID
+        # if len(args) > 1:
+        #     self.healerDistanceToPlayer = args[1]
+        # if len(args) > 2:
+        #     self.bark = args[2]
+        # if len(args) > 3:
+            self.id = args[0]        
 
     def execute(self, delta=0):
         ret = BTNode.execute(self, delta)
-        if self.playerHealth < .5 * HEROHITPOINTS and self.healerDistanceToPlayer < 150 and self.bark == True: 
-            return self.getChild(0).execute(delta)
+
+        # if self.playerHealth < .5 * HEROHITPOINTS and self.healerDistanceToPlayer < 150 and self.bark == True:
+        #     return self.getChild(0).execute(delta)
+        # else:
+        #     return False
+        # return ret
+
+
+        #### Chris Add on For Bark "Logic"
+        if self.agent.justHeardBark == True or self.agent.executingBark == True:
+            self.agent.justHeardBark = False
+            
+            player_health = self.agent.barkState[self.id]["playerHealth"]
+            player_distance = self.agent.barkState[self.id]["playerDistance"]
+            if player_health < .5 * HEROHITPOINTS and player_distance < 150: 
+                self.agent.executingBark = True
+                return self.getChild(0).execute(delta)
+            else: 
+                self.agent.executingBark = False
+                return False
         else:
+            # Double check this logic.  Not sure it will work as expected
+            self.agent.executingBark = False
+            self.agent.justHeardBark = False
             return False
         return ret
+        ####
+
 
 class HealTeammateDaemon(BTNode):
     ### HEALS IF WE CAN
@@ -804,60 +941,26 @@ class HealTeammateDaemon(BTNode):
         hero = None
         # Get a reference to the enemy hero
         team = self.agent.world.getNPCsForTeam(self.agent.getTeam())
-        print team 
+        #print team 
 
         to_heal = None
-        distance_away = []
-        i = 0
-        for teammate in team:
-            distance_away[i] = distance(teammate.getLocation(), self.agent.getLocation())
-            i += 1
-        to_heal = team[distance_away.index(min(distance_away))]
-        far_away = min(distance_away)
+        distance_away = {} #key = teammate, value = distance
 
-        if to_heal != None and to_heal.isAlive() and far_away < 150 and to_heal. to_heal.getHitpoints() < .5*to_heal.getMaxHitpoints():
-            self.agent.minionTarget = to_heal
-            self.agent.minionTargetLocation = to_heal.getLocation()
+        for teammate in team:
+            if teammate != self.agent and teammate != self.agent.myHero:
+                distance_away[teammate] = distance(teammate.getLocation(), self.agent.getLocation())
+        #print distance_away
+        min_to_heal = min(distance_away, key=distance_away.get)
+        #print to_heal
+        min_dist = min(distance_away)
+
+        if min_to_heal != None and min_to_heal.isAlive() and min_dist < 150 and min_to_heal.getHitpoints() < .5*min_to_heal.getMaxHitpoints():
+            self.agent.minionTarget = min_to_heal
+            self.agent.minionTargetLocation = min_to_heal.getLocation()
             return self.getChild(0).execute(delta)
         else:
             return False
         return ret
-
-# REGULAR MF BAEHAVIORS
-
-# class FindCover(BTNode):
-#     def parseArgs(self, args):
-#         BTNode.parseArgs(self, args)
-#         self.target = None
-#         self.timer = 50
-#         # First argument is the factor
-#         if len(args) > 0:
-#             self.percentage = args[0]
-#         # Second argument is the node ID
-#         if len(args) > 1:
-#             self.id = args[1]
-
-#     def enter(self):
-#         BTNode.enter(self)
-#         # temporary go to base, but should go to nearest obstacle cover area
-#         self.agent.navigateTo(self.agent.world.getBaseForTeam(self.agent.getTeam()).getLocation())
-
-#     def execute(self):
-#         ret = BTNode.execute(self, delta)
-#         # if self.agent.getHitpoints() > self.agent.getMaxHitpoints():
-#         #     # fail executability conditions
-#         #     print "exec", self.id, "false"
-#         #     return False
-#         # elif self.agent.getHitpoints() == self.agent.getMaxHitpoints():
-#         #     # Exection succeeds
-#         #     print "exec", self.id, "true"
-#         #     print 'IM GOING TO RETREAT'
-#         #     return True
-#         # else:
-#         #     # executing
-#         #     return None
-#         return ret
-
 
 class HealTeammate(BTNode):
     ### target: the minion to chase
@@ -865,7 +968,6 @@ class HealTeammate(BTNode):
 
     def parseArgs(self, args):
         BTNode.parseArgs(self, args)
-        self.target = None
         self.timer = 50
         # First argument is the node ID
         if len(args) > 0:
@@ -880,7 +982,7 @@ class HealTeammate(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or self.target.isAlive() == False:
             # failed execution conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         else:
             self.agent.heal(self.target)
@@ -914,6 +1016,7 @@ class FindTeammate(BTNode):
     def enter(self):
         BTNode.enter(self)
         self.timer = 50
+        
         if self.hero != self.agent.minionTarget: #should expect a hero if from other branch. should expect minion if passed through the daemon successfully.
             self.target = self.hero
         else:
@@ -927,11 +1030,11 @@ class FindTeammate(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or self.target.isAlive() == False:
             # failed execution conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif distance(self.agent.getLocation(), self.target.getLocation()) < 1:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1028,11 +1131,11 @@ class MoveToTarget(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None:
             # failed executability conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif distance(self.agent.getLocation(), self.target) < self.agent.getRadius():
             # Execution succeeds
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1071,11 +1174,11 @@ class Retreat(BTNode):
         ret = BTNode.execute(self, delta)
         if self.agent.getHitpoints() > self.agent.getMaxHitpoints() * self.percentage:
             # fail executability conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif self.agent.getHitpoints() == self.agent.getMaxHitpoints():
             # Exection succeeds
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1124,11 +1227,11 @@ class ChaseEnemy(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or self.target.isAlive() == False:
             # failed execution conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif distance(self.agent.getLocation(), self.target.getLocation()) < BIGBULLETRANGE - 3:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1198,11 +1301,11 @@ class KillEnemy(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or distance(self.agent.getLocation(), self.target.getLocation()) > BIGBULLETRANGE:
             # failed executability conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif self.target.isAlive() == False:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1271,11 +1374,11 @@ class ChaseMinion(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or self.target.isAlive() == False:
             # failed execution conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif distance(self.agent.getLocation(), self.target.getLocation()) < BIGBULLETRANGE - 3:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1346,11 +1449,11 @@ class KillMinion(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or distance(self.agent.getLocation(), self.target.getLocation()) > BIGBULLETRANGE:
             # failed executability conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif self.target.isAlive() == False:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1412,11 +1515,11 @@ class ChaseHero(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or self.target.isAlive() == False:
             # fails executability conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif distance(self.agent.getLocation(), self.target.getLocation()) < BIGBULLETRANGE - 3:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1471,15 +1574,11 @@ class KillHero(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or distance(self.agent.getLocation(), self.target.getLocation()) > BIGBULLETRANGE:
             # failed executability conditions
-            if self.target == None:
-                print "foo none"
-            else:
-                print "foo dist", distance(self.agent.getLocation(), self.target.getLocation())
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif self.target.isAlive() == False:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1539,11 +1638,11 @@ class ChaseTower(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or self.target.isAlive() == False:
             # fails executability conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif distance(self.agent.getLocation(), self.target.getLocation()) < BIGBULLETRANGE - 3:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1596,15 +1695,11 @@ class KillTower(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or distance(self.agent.getLocation(), self.target.getLocation()) > BIGBULLETRANGE:
             # failed executability conditions
-            if self.target == None:
-                print "foo none"
-            else:
-                print "foo dist", distance(self.agent.getLocation(), self.target.getLocation())
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif self.target.isAlive() == False:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1656,7 +1751,7 @@ class HitpointDaemon(BTNode):
         ret = BTNode.execute(self, delta)
         if self.agent.getHitpoints() < self.agent.getMaxHitpoints() * self.percentage:
             # Check failed
-            print "exec", self.id, "fail"
+            #print "exec", self.id, "fail"
             return False
         else:
             # Check didn't fail, return child's status
@@ -1696,7 +1791,7 @@ class BuffDaemon(BTNode):
                 break
         if hero == None or self.agent.level <= hero.level + self.advantage:
             # fail check
-            print "exec", self.id, "fail"
+            #print "exec", self.id, "fail"
             return False
         else:
             # Check didn't fail, return child's status
@@ -1776,7 +1871,7 @@ class HeroPresentDaemon(BTNode):
                 break
         if hero != None and distance(self.agent.getLocation(), hero.getLocation()) < 1.05 * BIGBULLETRANGE:
             # fail check
-            print "exec", self.id, "fail"
+            #print "exec", self.id, "fail"
             return False
         else:
             # Check didn't fail, return child's status
@@ -1814,15 +1909,15 @@ class RetreatToHealer(BTNode):
         ret = BTNode.execute(self, delta)
         if self.agent.getHitpoints() > self.agent.getMaxHitpoints() * self.percentage:
             # fail executability conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif self.target == None or self.target.isAlive() == False:
             # failed execution conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif distance(self.agent.getLocation(), self.target.getLocation()) < self.agent.getMaxRadius() and self.agent.hitpoints==self.agent.getMaxHitpoints:
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1868,11 +1963,11 @@ class RetreatToPlayer(BTNode):
         ret = BTNode.execute(self, delta)
         if self.target == None or self.target.isAlive() == False:
             # failed execution conditions
-            print "exec", self.id, "false"
+            #print "exec", self.id, "false"
             return False
         elif distance(self.agent.getLocation(), self.target.getLocation()) < self.agent.getMaxRadius():
             # succeeded
-            print "exec", self.id, "true"
+            #print "exec", self.id, "true"
             return True
         else:
             # executing
@@ -1960,8 +2055,9 @@ def shootEnRoute(agent):
                 dist=d
                 target=e
         if target:
-            agent.turnToFace(target.getLocation())
-            agent.shoot()
+            shootAtTarget_function(agent, target)
+            #agent.turnToFace(target.getLocation())
+            #agent.shoot()
 
 def AOEEnRoute(agent):
     if isinstance(agent,Hero):
@@ -1981,3 +2077,77 @@ def AOEEnRoute(agent):
 
 
 
+# Leading Shot Functions
+def normalize(line):
+    dx = line[1][0] - line[0][0]
+    dy = line[1][1] - line[0][1]
+    mag = (dx**2.0 + dy**2.0)**0.5
+    if mag == 0.0:
+        return (0.,0.)
+    return (dx/mag,dy/mag)
+def turnToFace_TurnAngle(agent, pos):
+    direction = (pos[0] - agent.getLocation()[0], pos[1] - agent.getLocation()[1])
+    angle = math.degrees(numpy.arctan2(direction[0],direction[1]))-90
+    return angle
+
+def cross_product(a,b):
+    i = a[1]*b[2]
+    j = a[2]*b[0]
+    k = a[0]*b[1]
+    return (i,j,k)
+
+def polarity(vector_to_agent,normalizedDirection):
+    polarity_primitive = vector_to_agent[0] * normalizedDirection[1] - vector_to_agent[1] * normalizedDirection[0]
+    if polarity_primitive >= 0:
+        return 1.0
+    else:
+        return -1.0
+def leading_shot_angle(agent,target):
+    if not isinstance(target,Tower) and not isinstance(target,Base):
+        if not target.isMoving():
+            return False,0.
+    else:
+        return False,0.
+    # this is going to happen anyway
+    agent.turnToFace(target.position)
+
+    target_position = target.position
+    target_destination = target.moveTarget
+    target_speed = target.speed
+    normalizedDirection = normalize((target_position,target_destination))
+
+    agent_position = agent.position
+    vector_to_agent = normalize((target_position,agent_position))
+
+    if normalizedDirection and vector_to_agent:
+        if isinstance(normalizedDirection[0],numpy.float) and isinstance(normalizedDirection[1],numpy.float) and isinstance(vector_to_agent[0],numpy.float) and isinstance(vector_to_agent[1],numpy.float):
+            dp = dotProduct(normalizedDirection,vector_to_agent)
+        else:
+            dp = 0.
+    else:
+        dp = 0.
+    phi = math.acos(dp)
+
+
+    bullet_speed = BIGBULLETSPEED
+    theta_prime = math.degrees(math.asin((float(target_speed[0])/float(bullet_speed[0]))*math.sin(phi)))
+    #print ("normalizedDirection:{0} vector_to_agent:{1}".format(normalizedDirection,vector_to_agent))
+    theta = polarity(vector_to_agent,normalizedDirection)*theta_prime
+    total_angle = agent.orientation + theta
+    #o if total_angle > 360:
+    # 	return True,total_angle - 360
+    # elif total_angle < 0:
+    # 	return True,total_angle + 360
+    # else:
+    # 	return True,total_angle
+    return True,total_angle
+
+def shootAtTarget_function(agent,target):
+    if agent is not None and target is not None:
+        takeLeadingShot, turn_angle = leading_shot_angle(agent, target)
+        if takeLeadingShot:
+            agent.turnToAngle(turn_angle)
+        # self.agent.turnToAngle(turn_angle)
+        else:
+            agent.turnToFace(target.getLocation())
+        agent.shoot()

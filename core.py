@@ -105,30 +105,23 @@ class Mover(pygame.sprite.Sprite, Thing):
 
     def move(self, offset):
         if self.world.obstacles:
-            x=offset[0]
-            y=offset[1]
+            if isinstance(self, Agent):
+                desired_position=tuple(map(lambda c, v: c + v, self.position, offset))
+                dp1=(self.rect.topleft[0]+desired_position[0]-self.position[0],self.rect.topleft[1]+desired_position[1]-self.position[1])
+                dp2=(self.rect.topright[0]+desired_position[0]-self.position[0],self.rect.topright[1]+desired_position[1]-self.position[1])
+                dp3=(self.rect.bottomleft[0]+desired_position[0]-self.position[0],self.rect.bottomleft[1]+desired_position[1]-self.position[1])
+                dp4=(self.rect.bottomright[0]+desired_position[0]-self.position[0],self.rect.bottomright[1]+desired_position[1]-self.position[1])
 
-            p1=(self.rect.topleft[0]+x,self.rect.topleft[1]+y)
-            p2=(self.rect.topright[0]+x,self.rect.topleft[1]+y)
-            p3=(self.rect.bottomleft[0]+x,self.rect.topleft[1]+y)
-            p4=(self.rect.bottomright[0]+x,self.rect.topleft[1]+y)
-            
-            if not (insideObstacle(p1, self.world.obstacles) or insideObstacle(p2, self.world.obstacles) or insideObstacle(p3, self.world.obstacles) or insideObstacle(p4, self.world.obstacles)):
+                if not (insideObstacle(dp1, self.world.obstacles) or insideObstacle(dp2, self.world.obstacles) or insideObstacle(dp3, self.world.obstacles) or insideObstacle(dp4, self.world.obstacles)):
+                    self.position = desired_position
+                    self.rect.center = self.position
+            else:
                 self.position = tuple(map(lambda c, v: c + v, self.position, offset))
                 self.rect.center = self.position
-            else:
-                if isinstance(self, Agent):
-                    self.stopMoving()
-                else:
-                    self.position = tuple(map(lambda c, v: c + v, self.position, offset))
-                    self.rect.center = self.position
         else:
             self.position = tuple(map(lambda c, v: c + v, self.position, offset))
             self.rect.center = self.position
-
-
-        #self.position = tuple(map(lambda x, y: x + y, self.position, offset))
-        #self.rect.center = self.position
+    
     
     ### Tells the agent to face a point
     def turnToFace(self, pos):
