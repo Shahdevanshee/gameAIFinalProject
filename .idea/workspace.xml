@@ -71,8 +71,8 @@
           <file leaf-file-name="rungame.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/rungame.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="382">
-                  <caret line="220" column="28" selection-start-line="220" selection-start-column="27" selection-end-line="220" selection-end-column="28" />
+                <state relative-caret-position="3117">
+                  <caret line="207" column="8" selection-start-line="207" selection-start-column="8" selection-end-line="207" selection-end-column="8" />
                   <folding />
                 </state>
               </provider>
@@ -878,8 +878,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/rungame.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="382">
-          <caret line="220" column="28" selection-start-line="220" selection-start-column="27" selection-end-line="220" selection-end-column="28" />
+        <state relative-caret-position="3117">
+          <caret line="207" column="8" selection-start-line="207" selection-start-column="8" selection-end-line="207" selection-end-column="8" />
           <folding />
         </state>
       </provider>
